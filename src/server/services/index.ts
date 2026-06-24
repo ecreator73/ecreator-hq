@@ -126,4 +126,11 @@ export {
   orchestrationsService,
   growthAlertsService,
 } from "./growth-engine.service";
+export { importService } from "./import.service";
+export type {
+  CustomerImportOptions,
+  ImportResult,
+  CustomerPreview,
+  CustomerPreviewRow,
+} from "./import.service";
 export { ServiceError } from "./_helpers";

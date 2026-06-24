@@ -36,3 +36,5 @@ Thumbs.db
 # Supabase (lokale CLI)
 /supabase/.branches
 /supabase/.temp
+
+.vercel
