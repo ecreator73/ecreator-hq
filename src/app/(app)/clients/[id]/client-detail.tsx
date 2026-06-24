@@ -1,41 +1,51 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import {
   ArrowLeft,
   Loader2,
   Pencil,
-  Plus,
   Rocket,
   LogOut,
+  AlertTriangle,
+  CircleDot,
+  Wallet,
+  FileSignature,
+  UserRound,
+  CalendarClock,
+  CalendarCheck,
+  Activity as ActivityIcon,
+  ListChecks,
 } from "lucide-react";
 import { Modal } from "@/components/ui/modal";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { EmptyState } from "@/components/ui/empty-state";
 import { StatusBadge } from "@/components/tasks/status-badge";
 import { QuickCreate } from "@/components/tasks/quick-create";
 import { ClientForm } from "@/components/clients/client-form";
-import { ClientWarnings } from "@/components/clients/client-warnings";
 import { ReportingCallQuickCreate } from "@/components/clients/reporting-call-quick-create";
 import {
-  CLIENT_INTERACTION_TYPES,
-  CLIENT_INTERACTION_TYPE_LABELS,
-  CLIENT_PACKAGE_LABELS,
-  REPORTING_CALL_STATUSES,
-  statusLabel,
-  type ClientInteractionType,
-} from "@/config/catalog";
+  ProjectQuickCreate,
+  FileQuickCreate,
+  NoteQuickCreate,
+} from "@/components/clients/detail-quick-creates";
+import { statusLabel } from "@/config/catalog";
 import {
   startOnboardingAction,
   createChecklistAction,
-  toggleChecklistItemAction,
-  createClientInteractionAction,
-  markReportingCallStatusAction,
 } from "@/app/(app)/clients/actions";
 import { formatDate, formatCHF, cn } from "@/lib/utils";
+import { statusColorOf, type TabKey } from "./detail-ui";
+import { OverviewTab } from "./tabs/overview-tab";
+import { ProjectsTab } from "./tabs/projects-tab";
+import { TasksTab } from "./tabs/tasks-tab";
+import { ReportingTab } from "./tabs/reporting-tab";
+import { ContractsTab } from "./tabs/contracts-tab";
+import { FilesTab } from "./tabs/files-tab";
+import { FinanceTab } from "./tabs/finance-tab";
+import { ActivityTab } from "./tabs/activity-tab";
+import { NotesTab } from "./tabs/notes-tab";
 import type {
   ClientWithStats,
   Project,
@@ -43,36 +53,18 @@ import type {
   ReportingCallWithRelations,
   ClientInteraction,
   ClientChecklist,
-  ClientChecklistItem,
   FileRecord,
   Contract,
+  Contact,
+  InvoiceWithClient,
   ProfileMini,
 } from "@/types/entities";
 
-const TABS = [
-  { key: "overview", label: "Uebersicht" },
-  { key: "projects", label: "Projekte" },
-  { key: "tasks", label: "Aufgaben" },
-  { key: "reporting", label: "Reporting" },
-  { key: "files", label: "Dateien" },
-  { key: "invoices", label: "Rechnungen" },
-  { key: "activity", label: "Aktivitaet" },
-] as const;
-type TabKey = (typeof TABS)[number]["key"];
+const OPEN_TASK = (t: TaskWithRelations) =>
+  t.status?.key !== "done" && t.status?.key !== "archived";
 
-const inputClass =
-  "block w-full rounded-lg border border-neutral-300 bg-white px-3 py-2 text-sm text-neutral-900 shadow-sm placeholder:text-neutral-400 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-100";
-
-const CHECKLIST_LABELS: Record<string, string> = {
-  onboarding: "Onboarding",
-  offboarding: "Offboarding",
-};
-
-/** Aktiver Vertrag (Status "active"), sonst der erste vorhandene. */
 function activeContract(contracts: Contract[]): Contract | null {
-  return (
-    contracts.find((c) => c.status === "active") ?? contracts[0] ?? null
-  );
+  return contracts.find((c) => c.status === "active") ?? contracts[0] ?? null;
 }
 
 export function ClientDetail({
@@ -84,6 +76,8 @@ export function ClientDetail({
   checklists,
   files,
   contracts,
+  contacts,
+  invoices,
   users,
 }: {
   client: ClientWithStats;
@@ -94,6 +88,8 @@ export function ClientDetail({
   checklists: ClientChecklist[];
   files: FileRecord[];
   contracts: Contract[];
+  contacts: Contact[];
+  invoices: InvoiceWithClient[];
   users: ProfileMini[];
 }) {
   const router = useRouter();
@@ -101,13 +97,30 @@ export function ClientDetail({
   const [editing, setEditing] = useState(false);
   const [pending, startTransition] = useTransition();
 
+  const openTasks = useMemo(() => tasks.filter(OPEN_TASK), [tasks]);
+  const notes = useMemo(() => interactions.filter((i) => i.type === "note"), [interactions]);
+  const contract = activeContract(contracts);
+  const danger = client.warnings.filter((w) => w.severity === "danger");
+  const otherWarnings = client.warnings.filter((w) => w.severity !== "danger");
+
+  const TABS: { key: TabKey; label: string; count?: number }[] = [
+    { key: "overview", label: "Uebersicht" },
+    { key: "projects", label: "Projekte", count: projects.length },
+    { key: "tasks", label: "Aufgaben", count: openTasks.length },
+    { key: "reporting", label: "Reporting Calls", count: reportingCalls.length },
+    { key: "contracts", label: "Vertraege", count: contracts.length },
+    { key: "files", label: "Dateien", count: files.length },
+    { key: "finance", label: "Finanzen" },
+    { key: "activity", label: "Aktivitaet" },
+    { key: "notes", label: "Notizen", count: notes.length },
+  ];
+
   function startOnboarding() {
     startTransition(async () => {
       await startOnboardingAction(client.id);
       router.refresh();
     });
   }
-
   function startOffboarding() {
     startTransition(async () => {
       await createChecklistAction(client.id, "offboarding");
@@ -121,126 +134,163 @@ export function ClientDetail({
         href="/clients/list"
         className="inline-flex items-center gap-1.5 text-sm text-neutral-500 hover:text-neutral-800"
       >
-        <ArrowLeft className="h-4 w-4" />
+        <ArrowLeft className="h-4 w-4" aria-hidden="true" />
         Zurueck zu Kunden
       </Link>
 
+      {/* Header */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-        <div className="space-y-2">
+        <div className="min-w-0 space-y-1.5">
           <div className="flex flex-wrap items-center gap-2.5">
-            <h1 className="text-xl font-semibold tracking-tight text-neutral-900">
+            <h1 className="text-2xl font-semibold tracking-tight text-neutral-900">
               {client.name}
             </h1>
             <StatusBadge
               label={statusLabel("client", client.status)}
-              color={STATUS_COLOR(client.status)}
+              color={statusColorOf("client", client.status)}
             />
-            <span className="text-sm font-medium text-neutral-500">
-              MRR {formatCHF(client.mrr)}
-            </span>
           </div>
-          <ClientWarnings warnings={client.warnings} />
+          <p className="text-sm text-neutral-500">
+            {client.industry ? `${client.industry} · ` : ""}
+            {client.account_manager?.full_name
+              ? `Betreut von ${client.account_manager.full_name}`
+              : "Kein Account Manager"}
+          </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <Button
-            variant="secondary"
-            size="sm"
-            onClick={() => setEditing(true)}
-          >
-            <Pencil className="h-4 w-4" />
+          <Button variant="secondary" size="sm" onClick={() => setEditing(true)}>
+            <Pencil className="h-4 w-4" aria-hidden="true" />
             Bearbeiten
           </Button>
-          <Button
-            variant="primary"
-            size="sm"
-            onClick={startOnboarding}
-            disabled={pending}
-          >
-            {pending ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
-              <Rocket className="h-4 w-4" />
-            )}
-            Onboarding starten
+          <Button variant="secondary" size="sm" onClick={startOnboarding} disabled={pending}>
+            {pending ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" /> : <Rocket className="h-4 w-4" aria-hidden="true" />}
+            Onboarding
           </Button>
-          <Button
-            variant="secondary"
-            size="sm"
-            onClick={startOffboarding}
-            disabled={pending}
-          >
-            <LogOut className="h-4 w-4" />
+          <Button variant="ghost" size="sm" onClick={startOffboarding} disabled={pending}>
+            <LogOut className="h-4 w-4" aria-hidden="true" />
             Offboarding
           </Button>
         </div>
       </div>
 
+      {/* Summary cards */}
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <SummaryCard icon={CircleDot} label="Status" value={statusLabel("client", client.status)} tone={client.status === "active" ? "green" : client.status === "paused" ? "amber" : "neutral"} />
+        <SummaryCard icon={Wallet} label="MRR" value={formatCHF(client.mrr)} tone="brand" />
+        <SummaryCard icon={FileSignature} label="Vertragsstatus" value={contract ? statusLabel("contract", contract.status) : "—"} />
+        <SummaryCard icon={UserRound} label="Account Manager" value={client.account_manager?.full_name ?? "—"} />
+        <SummaryCard icon={CalendarCheck} label="Startdatum" value={client.start_date ? formatDate(client.start_date) : "—"} />
+        <SummaryCard icon={CalendarClock} label="Naechster Reporting" value={client.next_reporting ? formatDate(client.next_reporting) : "—"} tone={client.next_reporting ? "neutral" : "amber"} />
+        <SummaryCard icon={ActivityIcon} label="Letzte Aktivitaet" value={client.last_contact ? formatDate(client.last_contact) : "—"} />
+        <SummaryCard icon={ListChecks} label="Offene Aufgaben" value={String(openTasks.length)} tone={openTasks.length >= 5 ? "amber" : "neutral"} />
+      </div>
+
+      {/* Customer Health */}
+      {client.warnings.length > 0 ? (
+        <div
+          className={cn(
+            "flex flex-wrap items-center gap-2 rounded-xl border px-4 py-3",
+            danger.length > 0 ? "border-red-200 bg-red-50" : "border-amber-200 bg-amber-50",
+          )}
+        >
+          <AlertTriangle
+            className={cn("h-4 w-4 shrink-0", danger.length > 0 ? "text-red-600" : "text-amber-600")}
+            aria-hidden="true"
+          />
+          {[...danger, ...otherWarnings].map((w) => (
+            <span
+              key={w.type}
+              className={cn(
+                "rounded-full px-2.5 py-1 text-xs font-medium",
+                w.severity === "danger"
+                  ? "bg-red-100 text-red-700"
+                  : w.severity === "warn"
+                    ? "bg-amber-100 text-amber-800"
+                    : "bg-neutral-100 text-neutral-600",
+              )}
+            >
+              {w.label}
+            </span>
+          ))}
+        </div>
+      ) : null}
+
+      {/* Quick Action Bar (immer sichtbar) */}
+      <div className="sticky top-0 z-20 -mx-1 flex flex-wrap items-center gap-2 rounded-xl border border-neutral-200 bg-white/95 px-2 py-2 shadow-sm backdrop-blur supports-[backdrop-filter]:bg-white/80">
+        <span className="px-1 text-xs font-medium uppercase tracking-wide text-neutral-400">
+          Schnellaktion
+        </span>
+        <QuickCreate initial={{ client_id: client.id }} label="Aufgabe" variant="secondary" />
+        <ReportingCallQuickCreate clientId={client.id} label="Reporting Call" variant="secondary" />
+        <ProjectQuickCreate clientId={client.id} users={users} />
+        <FileQuickCreate clientId={client.id} />
+        <NoteQuickCreate clientId={client.id} />
+      </div>
+
       {/* Tabs */}
-      <nav className="flex gap-1 overflow-x-auto border-b border-neutral-200">
+      <nav className="-mx-1 flex gap-1 overflow-x-auto border-b border-neutral-200 px-1" aria-label="Kunden-Tabs">
         {TABS.map((t) => (
           <button
             key={t.key}
             type="button"
             onClick={() => setTab(t.key)}
+            aria-current={tab === t.key ? "page" : undefined}
             className={cn(
-              "shrink-0 border-b-2 px-3 py-2 text-sm font-medium transition-colors",
+              "shrink-0 border-b-2 px-3 py-2.5 text-sm font-medium transition-colors",
               tab === t.key
                 ? "border-brand-600 text-brand-700"
                 : "border-transparent text-neutral-500 hover:text-neutral-800",
             )}
           >
             {t.label}
-            {t.key === "projects" && projects.length > 0
-              ? ` (${projects.length})`
-              : ""}
-            {t.key === "tasks" && tasks.length > 0 ? ` (${tasks.length})` : ""}
-            {t.key === "reporting" && reportingCalls.length > 0
-              ? ` (${reportingCalls.length})`
-              : ""}
-            {t.key === "activity" && interactions.length > 0
-              ? ` (${interactions.length})`
-              : ""}
+            {typeof t.count === "number" && t.count > 0 ? (
+              <span className="ml-1.5 rounded-full bg-neutral-100 px-1.5 py-0.5 text-xs tabular-nums text-neutral-500">
+                {t.count}
+              </span>
+            ) : null}
           </button>
         ))}
       </nav>
 
-      <Card>
-        <CardContent className="p-5 sm:p-6">
-          {tab === "overview" ? (
-            <OverviewTab
-              client={client}
-              contracts={contracts}
-              checklists={checklists}
-            />
-          ) : tab === "projects" ? (
-            <ProjectsTab projects={projects} />
-          ) : tab === "tasks" ? (
-            <TasksTab clientId={client.id} tasks={tasks} />
-          ) : tab === "reporting" ? (
-            <ReportingTab
-              clientId={client.id}
-              calls={reportingCalls}
-              users={users}
-            />
-          ) : tab === "files" ? (
-            <FilesTab files={files} />
-          ) : tab === "invoices" ? (
-            <EmptyState
-              title="Rechnungen"
-              description="Finance-Integration folgt."
-            />
-          ) : (
-            <ActivityTab clientId={client.id} interactions={interactions} />
-          )}
-        </CardContent>
-      </Card>
+      {/* Panels */}
+      <div>
+        {tab === "overview" ? (
+          <OverviewTab
+            client={client}
+            contract={contract}
+            contracts={contracts}
+            contacts={contacts}
+            projects={projects}
+            tasks={openTasks}
+            interactions={interactions}
+            checklists={checklists}
+            onTab={setTab}
+          />
+        ) : tab === "projects" ? (
+          <ProjectsTab clientId={client.id} projects={projects} users={users} />
+        ) : tab === "tasks" ? (
+          <TasksTab clientId={client.id} tasks={tasks} />
+        ) : tab === "reporting" ? (
+          <ReportingTab clientId={client.id} calls={reportingCalls} users={users} />
+        ) : tab === "contracts" ? (
+          <ContractsTab contracts={contracts} />
+        ) : tab === "files" ? (
+          <FilesTab clientId={client.id} files={files} />
+        ) : tab === "finance" ? (
+          <FinanceTab client={client} invoices={invoices} contracts={contracts} />
+        ) : tab === "activity" ? (
+          <ActivityTab
+            interactions={interactions}
+            reportingCalls={reportingCalls}
+            tasks={tasks}
+            contracts={contracts}
+          />
+        ) : (
+          <NotesTab clientId={client.id} interactions={interactions} />
+        )}
+      </div>
 
-      <Modal
-        open={editing}
-        onClose={() => setEditing(false)}
-        title="Kunde bearbeiten"
-        size="lg"
-      >
+      <Modal open={editing} onClose={() => setEditing(false)} title="Kunde bearbeiten" size="lg">
         <ClientForm
           mode="edit"
           clientId={client.id}
@@ -271,541 +321,34 @@ export function ClientDetail({
   );
 }
 
-/* ----------------------------------------------------------------------- */
-
-/** Catalog-Farbe fuer einen Client-Status (fuer StatusBadge). */
-function STATUS_COLOR(status: string): string | undefined {
-  const map: Record<string, string> = {
-    active: "green",
-    onboarding: "blue",
-    paused: "amber",
-    ended: "gray",
-  };
-  return map[status];
-}
-
-function Field({
+function SummaryCard({
+  icon: Icon,
   label,
-  children,
+  value,
+  tone = "neutral",
 }: {
+  icon: React.ComponentType<{ className?: string }>;
   label: string;
-  children: React.ReactNode;
+  value: string;
+  tone?: "neutral" | "brand" | "green" | "amber";
 }) {
+  const toneCls =
+    tone === "brand"
+      ? "text-brand-700"
+      : tone === "green"
+        ? "text-green-700"
+        : tone === "amber"
+          ? "text-amber-700"
+          : "text-neutral-900";
   return (
-    <div>
-      <dt className="text-xs font-medium uppercase tracking-wide text-neutral-400">
+    <div className="rounded-xl border border-neutral-200 bg-white p-3.5 shadow-sm">
+      <div className="flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-wide text-neutral-400">
+        <Icon className="h-3.5 w-3.5" aria-hidden="true" />
         {label}
-      </dt>
-      <dd className="mt-1 text-sm text-neutral-800">{children}</dd>
-    </div>
-  );
-}
-
-function OverviewTab({
-  client,
-  contracts,
-  checklists,
-}: {
-  client: ClientWithStats;
-  contracts: Contract[];
-  checklists: ClientChecklist[];
-}) {
-  const contract = activeContract(contracts);
-  const laufzeit =
-    contract && (contract.start_date || contract.end_date)
-      ? `${contract.start_date ? formatDate(contract.start_date) : "?"} – ${
-          contract.end_date ? formatDate(contract.end_date) : "offen"
-        }`
-      : "-";
-
-  return (
-    <div className="space-y-6">
-      <dl className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        <Field label="Kunde">{client.name}</Field>
-        <Field label="E-Mail">
-          {client.email ? (
-            <a
-              href={`mailto:${client.email}`}
-              className="text-brand-700 hover:underline"
-            >
-              {client.email}
-            </a>
-          ) : (
-            "-"
-          )}
-        </Field>
-        <Field label="Telefon">
-          {client.phone ? (
-            <a
-              href={`tel:${client.phone}`}
-              className="text-brand-700 hover:underline"
-            >
-              {client.phone}
-            </a>
-          ) : (
-            "-"
-          )}
-        </Field>
-        <Field label="Website">
-          {client.website ? (
-            <a
-              href={client.website}
-              target="_blank"
-              rel="noreferrer"
-              className="text-brand-700 hover:underline"
-            >
-              {client.website}
-            </a>
-          ) : (
-            "-"
-          )}
-        </Field>
-        <Field label="Paket">
-          {client.package
-            ? (CLIENT_PACKAGE_LABELS[
-                client.package as keyof typeof CLIENT_PACKAGE_LABELS
-              ] ?? client.package)
-            : "-"}
-        </Field>
-        <Field label="MRR">{formatCHF(client.mrr)}</Field>
-        <Field label="Vertragsstatus">
-          {contract ? (
-            <StatusBadge label={statusLabel("contract", contract.status)} />
-          ) : (
-            "-"
-          )}
-        </Field>
-        <Field label="Startdatum">
-          {client.start_date ? formatDate(client.start_date) : "-"}
-        </Field>
-        <Field label="Laufzeit">{laufzeit}</Field>
-        <Field label="Letzte Aktivitaet">
-          {client.last_contact ? formatDate(client.last_contact) : "-"}
-        </Field>
-        <Field label="Account Manager">
-          {client.account_manager?.full_name ?? "-"}
-        </Field>
-        <Field label="Naechster Reporting-Call">
-          {client.next_reporting ? formatDate(client.next_reporting) : "-"}
-        </Field>
-      </dl>
-
-      {client.notes ? (
-        <div>
-          <dt className="text-xs font-medium uppercase tracking-wide text-neutral-400">
-            Notizen
-          </dt>
-          <dd className="mt-1 whitespace-pre-wrap text-sm leading-relaxed text-neutral-700">
-            {client.notes}
-          </dd>
-        </div>
-      ) : null}
-
-      {checklists.length > 0 ? (
-        <div className="space-y-4">
-          {checklists.map((cl) => (
-            <ChecklistCard key={cl.id} clientId={client.id} checklist={cl} />
-          ))}
-        </div>
-      ) : null}
-    </div>
-  );
-}
-
-function ChecklistCard({
-  clientId,
-  checklist,
-}: {
-  clientId: string;
-  checklist: ClientChecklist;
-}) {
-  const router = useRouter();
-  const [pending, startTransition] = useTransition();
-  const items = checklist.items ?? [];
-  const done = items.filter((i) => i.completed).length;
-  const total = items.length;
-  const pct = total > 0 ? Math.round((done / total) * 100) : 0;
-
-  function toggle(item: ClientChecklistItem) {
-    startTransition(async () => {
-      await toggleChecklistItemAction(item.id, !item.completed, clientId);
-      router.refresh();
-    });
-  }
-
-  return (
-    <div className="rounded-lg border border-neutral-200 p-4">
-      <div className="mb-3 flex items-center justify-between gap-3">
-        <h3 className="text-sm font-semibold text-neutral-800">
-          {CHECKLIST_LABELS[checklist.kind] ?? checklist.kind}
-        </h3>
-        <span className="text-xs font-medium text-neutral-500">
-          {done}/{total} ({pct}%)
-        </span>
       </div>
-      <div
-        className="mb-3 h-1.5 w-full overflow-hidden rounded-full bg-neutral-100"
-        role="progressbar"
-        aria-valuenow={pct}
-        aria-valuemin={0}
-        aria-valuemax={100}
-      >
-        <div
-          className="h-full rounded-full bg-brand-500 transition-all"
-          style={{ width: `${pct}%` }}
-        />
-      </div>
-      {items.length === 0 ? (
-        <p className="text-sm italic text-neutral-400">Keine Punkte.</p>
-      ) : (
-        <ul className="space-y-1.5">
-          {items.map((item) => (
-            <li key={item.id}>
-              <label className="flex cursor-pointer items-center gap-2.5 text-sm text-neutral-700">
-                <input
-                  type="checkbox"
-                  checked={item.completed}
-                  disabled={pending}
-                  onChange={() => toggle(item)}
-                  className="h-4 w-4 rounded border-neutral-300 text-brand-600 focus:ring-brand-200"
-                />
-                <span
-                  className={cn(
-                    item.completed && "text-neutral-400 line-through",
-                  )}
-                >
-                  {item.title}
-                </span>
-              </label>
-            </li>
-          ))}
-        </ul>
-      )}
-    </div>
-  );
-}
-
-function ProjectsTab({ projects }: { projects: Project[] }) {
-  if (projects.length === 0) {
-    return (
-      <EmptyState
-        title="Keine Projekte"
-        description="Fuer diesen Kunden wurde noch kein Projekt angelegt."
-      />
-    );
-  }
-  return (
-    <ul className="divide-y divide-neutral-100 rounded-lg border border-neutral-200">
-      {projects.map((p) => (
-        <li
-          key={p.id}
-          className="flex items-center justify-between gap-3 px-4 py-3"
-        >
-          <div className="min-w-0">
-            <p className="truncate text-sm font-medium text-neutral-800">
-              {p.title}
-            </p>
-            <p className="text-xs text-neutral-500">{p.project_type}</p>
-          </div>
-          <div className="flex shrink-0 items-center gap-3">
-            <StatusBadge label={statusLabel("project", p.status)} />
-            <span className="text-sm text-neutral-500">
-              {p.due_date ? formatDate(p.due_date) : "-"}
-            </span>
-          </div>
-        </li>
-      ))}
-    </ul>
-  );
-}
-
-function TasksTab({
-  clientId,
-  tasks,
-}: {
-  clientId: string;
-  tasks: TaskWithRelations[];
-}) {
-  return (
-    <div className="space-y-4">
-      <div className="flex justify-end">
-        <QuickCreate initial={{ client_id: clientId }} label="Aufgabe" />
-      </div>
-      {tasks.length === 0 ? (
-        <EmptyState
-          title="Keine Aufgaben"
-          description="Lege eine Aufgabe an, damit dieser Kunde aktiv betreut wird."
-        />
-      ) : (
-        <ul className="divide-y divide-neutral-100 rounded-lg border border-neutral-200">
-          {tasks.map((t) => (
-            <li
-              key={t.id}
-              className="flex items-center justify-between gap-3 px-4 py-3"
-            >
-              <Link
-                href={`/tasks/${t.id}`}
-                className="text-sm font-medium text-neutral-800 hover:text-brand-700"
-              >
-                {t.title}
-              </Link>
-              <StatusBadge label={t.status?.label} color={t.status?.color} />
-            </li>
-          ))}
-        </ul>
-      )}
-    </div>
-  );
-}
-
-function ReportingTab({
-  clientId,
-  calls,
-  users,
-}: {
-  clientId: string;
-  calls: ReportingCallWithRelations[];
-  users: ProfileMini[];
-}) {
-  const router = useRouter();
-  const [pending, startTransition] = useTransition();
-
-  function setStatus(id: string, statusKey: string) {
-    startTransition(async () => {
-      await markReportingCallStatusAction(id, statusKey);
-      router.refresh();
-    });
-  }
-
-  return (
-    <div className="space-y-4">
-      <div className="flex justify-end">
-        <ReportingCallQuickCreate clientId={clientId} />
-      </div>
-      {calls.length === 0 ? (
-        <EmptyState
-          title="Keine Reporting-Calls"
-          description="Plane einen Reporting-Call, um die Kundenbeziehung aktiv zu fuehren."
-        />
-      ) : (
-        <ul className="divide-y divide-neutral-100 rounded-lg border border-neutral-200">
-          {calls.map((rc) => (
-            <li
-              key={rc.id}
-              className="flex flex-col gap-2 px-4 py-3 sm:flex-row sm:items-center sm:justify-between"
-            >
-              <div className="flex min-w-0 items-center gap-3">
-                <span className="text-sm font-medium text-neutral-800">
-                  {rc.scheduled_date ? formatDate(rc.scheduled_date) : "Offen"}
-                </span>
-                <StatusBadge
-                  label={statusLabel("reporting_call", rc.status)}
-                />
-                {rc.owner?.full_name ? (
-                  <span className="truncate text-sm text-neutral-500">
-                    {rc.owner.full_name}
-                  </span>
-                ) : null}
-              </div>
-              <select
-                value={rc.status}
-                onChange={(e) => setStatus(rc.id, e.target.value)}
-                disabled={pending}
-                aria-label="Reporting-Call-Status aendern"
-                className="h-9 shrink-0 rounded-lg border border-neutral-300 bg-white px-2.5 text-sm font-medium focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-100"
-              >
-                {REPORTING_CALL_STATUSES.map((s) => (
-                  <option key={s.key} value={s.key}>
-                    {s.label}
-                  </option>
-                ))}
-              </select>
-            </li>
-          ))}
-        </ul>
-      )}
-    </div>
-  );
-}
-
-function FilesTab({ files }: { files: FileRecord[] }) {
-  if (files.length === 0) {
-    return (
-      <EmptyState
-        title="Keine Dateien"
-        description="Datei-Upload via Storage folgt."
-      />
-    );
-  }
-  return (
-    <ul className="divide-y divide-neutral-100 rounded-lg border border-neutral-200">
-      {files.map((f) => (
-        <li
-          key={f.id}
-          className="flex items-center justify-between gap-3 px-4 py-3"
-        >
-          {f.file_url ? (
-            <a
-              href={f.file_url}
-              target="_blank"
-              rel="noreferrer"
-              className="truncate text-sm font-medium text-neutral-800 hover:text-brand-700"
-            >
-              {f.filename}
-            </a>
-          ) : (
-            <span className="truncate text-sm font-medium text-neutral-800">
-              {f.filename}
-            </span>
-          )}
-          <span className="shrink-0 text-xs text-neutral-500">
-            {f.category ?? "-"}
-          </span>
-        </li>
-      ))}
-    </ul>
-  );
-}
-
-function ActivityTab({
-  clientId,
-  interactions,
-}: {
-  clientId: string;
-  interactions: ClientInteraction[];
-}) {
-  const router = useRouter();
-  const [type, setType] = useState<ClientInteractionType>(
-    CLIENT_INTERACTION_TYPES[0].key,
-  );
-  const [subject, setSubject] = useState("");
-  const [body, setBody] = useState("");
-  const [pending, startTransition] = useTransition();
-
-  function submit() {
-    startTransition(async () => {
-      const r = await createClientInteractionAction({
-        client_id: clientId,
-        type,
-        subject: subject.trim() || undefined,
-        body: body.trim() || undefined,
-      });
-      if (r.ok) {
-        setSubject("");
-        setBody("");
-        setType(CLIENT_INTERACTION_TYPES[0].key);
-        router.refresh();
-      }
-    });
-  }
-
-  return (
-    <div className="space-y-6">
-      <form
-        onSubmit={(e) => {
-          e.preventDefault();
-          submit();
-        }}
-        className="space-y-3 rounded-lg border border-neutral-200 bg-neutral-50/60 p-4"
-      >
-        <div className="grid gap-3 sm:grid-cols-[160px_1fr]">
-          <div className="space-y-1.5">
-            <label className="block text-sm font-medium text-neutral-700">
-              Typ
-            </label>
-            <select
-              value={type}
-              onChange={(e) => setType(e.target.value as ClientInteractionType)}
-              className={inputClass}
-            >
-              {CLIENT_INTERACTION_TYPES.map((t) => (
-                <option key={t.key} value={t.key}>
-                  {t.label}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div className="space-y-1.5">
-            <label className="block text-sm font-medium text-neutral-700">
-              Betreff
-            </label>
-            <input
-              value={subject}
-              onChange={(e) => setSubject(e.target.value)}
-              placeholder="z.B. Reporting-Call durchgefuehrt"
-              className={inputClass}
-            />
-          </div>
-        </div>
-        <div className="space-y-1.5">
-          <label className="block text-sm font-medium text-neutral-700">
-            Notiz
-          </label>
-          <textarea
-            value={body}
-            onChange={(e) => setBody(e.target.value)}
-            rows={3}
-            className={inputClass}
-          />
-        </div>
-        <div className="flex justify-end">
-          <Button type="submit" size="sm" disabled={pending}>
-            {pending ? (
-              <>
-                <Loader2 className="h-4 w-4 animate-spin" />
-                Speichern ...
-              </>
-            ) : (
-              <>
-                <Plus className="h-4 w-4" />
-                Kontakt erfassen
-              </>
-            )}
-          </Button>
-        </div>
-      </form>
-
-      {interactions.length === 0 ? (
-        <EmptyState
-          title="Noch keine Aktivitaet"
-          description="Erfasse Calls, Meetings, E-Mails oder Notizen, um den Kontaktverlauf festzuhalten."
-        />
-      ) : (
-        <ol className="relative space-y-4 border-l border-neutral-200 pl-5">
-          {interactions.map((it) => (
-            <li key={it.id} className="relative">
-              <span
-                aria-hidden="true"
-                className="absolute -left-[1.4rem] top-1.5 h-2.5 w-2.5 rounded-full border-2 border-white bg-brand-500"
-              />
-              <div className="flex flex-wrap items-center gap-2">
-                <StatusBadge
-                  label={
-                    CLIENT_INTERACTION_TYPE_LABELS[
-                      it.type as keyof typeof CLIENT_INTERACTION_TYPE_LABELS
-                    ] ?? it.type
-                  }
-                  color="blue"
-                />
-                {it.subject ? (
-                  <span className="text-sm font-medium text-neutral-900">
-                    {it.subject}
-                  </span>
-                ) : null}
-              </div>
-              {it.body ? (
-                <p className="mt-1 whitespace-pre-wrap text-sm leading-relaxed text-neutral-700">
-                  {it.body}
-                </p>
-              ) : null}
-              <p className="mt-1 text-xs text-neutral-400">
-                {formatDate(it.interaction_date)}
-                {it.author?.full_name ? ` · ${it.author.full_name}` : ""}
-              </p>
-            </li>
-          ))}
-        </ol>
-      )}
+      <p className={cn("mt-1 truncate text-base font-semibold tabular-nums", toneCls)} title={value}>
+        {value}
+      </p>
     </div>
   );
 }

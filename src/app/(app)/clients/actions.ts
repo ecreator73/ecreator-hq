@@ -8,6 +8,9 @@ import {
   clientInteractionsService,
   clientChecklistsService,
   teamService,
+  projectsService,
+  contactsService,
+  filesService,
 } from "@/server/services";
 import type { ClientCreateInput, ClientUpdateInput } from "@/lib/validation/clients";
 import type {
@@ -15,6 +18,9 @@ import type {
   ReportingCallUpdateInput,
 } from "@/lib/validation/reporting-calls";
 import type { ClientInteractionCreateInput } from "@/lib/validation/client-interactions";
+import type { ProjectCreateInput } from "@/lib/validation/projects";
+import type { ContactCreateInput } from "@/lib/validation/contacts";
+import type { FileCreateInput } from "@/lib/validation/files";
 
 export type ActionResult<T = undefined> =
   | { ok: true; data?: T }
@@ -205,6 +211,62 @@ export async function clientFormOptionsAction(): Promise<
     await requireUser();
     const users = await teamService.listMembers().catch(() => []);
     return { ok: true, data: { users } };
+  } catch (e) {
+    return fail(e);
+  }
+}
+
+/* ---- Projekte ---- */
+export async function createProjectAction(
+  input: ProjectCreateInput,
+): Promise<ActionResult<{ id: string }>> {
+  try {
+    await requireUser();
+    const project = await projectsService.create(input);
+    revalidateClients(input.client_id ? String(input.client_id) : undefined);
+    return { ok: true, data: { id: project.id } };
+  } catch (e) {
+    return fail(e);
+  }
+}
+
+/* ---- Ansprechpartner ---- */
+export async function createContactAction(
+  input: ContactCreateInput,
+): Promise<ActionResult<{ id: string }>> {
+  try {
+    await requireUser();
+    const contact = await contactsService.create(input);
+    revalidateClients(input.client_id ? String(input.client_id) : undefined);
+    return { ok: true, data: { id: contact.id } };
+  } catch (e) {
+    return fail(e);
+  }
+}
+
+/* ---- Dateien (Link/Referenz) ---- */
+export async function createFileAction(
+  input: FileCreateInput,
+): Promise<ActionResult<{ id: string }>> {
+  try {
+    await requireUser();
+    const file = await filesService.create(input);
+    revalidateClients(input.client_id ? String(input.client_id) : undefined);
+    return { ok: true, data: { id: file.id } };
+  } catch (e) {
+    return fail(e);
+  }
+}
+
+export async function removeFileAction(
+  id: string,
+  clientId: string,
+): Promise<ActionResult> {
+  try {
+    await requireUser();
+    await filesService.remove(id);
+    revalidateClients(clientId);
+    return { ok: true };
   } catch (e) {
     return fail(e);
   }

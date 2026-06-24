@@ -10,6 +10,8 @@ import {
   clientChecklistsService,
   filesService,
   contractsService,
+  contactsService,
+  invoicesService,
 } from "@/server/services";
 import { clientFormOptionsAction } from "@/app/(app)/clients/actions";
 import type {
@@ -20,6 +22,8 @@ import type {
   ClientChecklist,
   FileRecord,
   Contract,
+  Contact,
+  InvoiceWithClient,
 } from "@/types/entities";
 import { ClientDetail } from "./client-detail";
 
@@ -44,13 +48,18 @@ export default async function ClientDetailPage({
     checklists,
     files,
     contracts,
+    contacts,
+    invoices,
     optionsResult,
   ] = await Promise.all([
     projectsService
       .list({ filter: { client_id: id } })
       .catch((): Project[] => []),
     tasksService
-      .list({ client_id: id })
+      .list(
+        { client_id: id },
+        { pageSize: 200, sort: { column: "due_date", ascending: true } },
+      )
       .then((r) => r.rows)
       .catch((): TaskWithRelations[] => []),
     reportingCallsService
@@ -68,6 +77,12 @@ export default async function ClientDetailPage({
     contractsService
       .list({ filter: { client_id: id } })
       .catch((): Contract[] => []),
+    contactsService
+      .list({ filter: { client_id: id } })
+      .catch((): Contact[] => []),
+    invoicesService
+      .list({ clientId: id })
+      .catch((): InvoiceWithClient[] => []),
     clientFormOptionsAction().catch(() => ({ ok: false as const, error: "" })),
   ]);
 
@@ -84,6 +99,8 @@ export default async function ClientDetailPage({
       checklists={checklists}
       files={files}
       contracts={contracts}
+      contacts={contacts}
+      invoices={invoices}
       users={users}
     />
   );
