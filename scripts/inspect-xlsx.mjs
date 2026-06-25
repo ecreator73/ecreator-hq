@@ -10,18 +10,20 @@ if (!path) {
 const wb = XLSX.readFile(path, { cellDates: true });
 console.log(`\nBlaetter (${wb.SheetNames.length}): ${wb.SheetNames.join(" | ")}`);
 
+const onlySheet = process.argv[3];
 for (const name of wb.SheetNames) {
+  if (onlySheet && name !== onlySheet) continue;
   const ws = wb.Sheets[name];
   const rows = XLSX.utils.sheet_to_json(ws, { header: 1, blankrows: false, defval: "" });
   console.log(`\n===== Blatt "${name}" — ${rows.length} Zeilen =====`);
-  const preview = rows.slice(0, 10);
+  const preview = onlySheet ? rows : rows.slice(0, 10);
   preview.forEach((r, i) => {
     const cells = (Array.isArray(r) ? r : []).map((c) => {
       if (c instanceof Date) return c.toISOString().slice(0, 10);
       const s = String(c);
-      return s.length > 22 ? s.slice(0, 22) + "…" : s;
+      return s.length > 34 ? s.slice(0, 34) + "…" : s;
     });
     console.log(`  [${String(i).padStart(2)}] ${cells.join(" | ")}`);
   });
-  if (rows.length > 10) console.log(`  … (${rows.length - 10} weitere Zeilen)`);
+  if (!onlySheet && rows.length > 10) console.log(`  … (${rows.length - 10} weitere Zeilen)`);
 }

@@ -38,3 +38,6 @@ Thumbs.db
 /supabase/.temp
 
 .vercel
+
+# Backups (enthalten echte Geschaeftsdaten - niemals committen)
+/backups/
