@@ -64,6 +64,8 @@ export { calendarService } from "./calendar.service";
 export type { GlobalCalendarEvent, CalendarCategory } from "./calendar.service";
 export { projectListService } from "./project-list.service";
 export type { ProjectListItem } from "./project-list.service";
+export { searchService } from "./search.service";
+export type { SearchGroup, SearchItem } from "./search.service";
 export { aiPromptsService } from "./prompt.service";
 export type { PromptFilters } from "./prompt.service";
 export { aiRunsService } from "./ai.service";

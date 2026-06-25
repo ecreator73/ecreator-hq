@@ -14,12 +14,21 @@ export function ClientQuickCreate({
   initial,
   variant = "primary",
   label = "Kunde",
+  open: openProp,
+  onOpenChange,
+  hideTrigger = false,
 }: {
   initial?: ClientFormInitial;
   variant?: "primary" | "secondary";
   label?: string;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+  hideTrigger?: boolean;
 }) {
-  const [open, setOpen] = useState(false);
+  const [internalOpen, setInternalOpen] = useState(false);
+  const open = openProp ?? internalOpen;
+  const setOpen = (o: boolean) =>
+    onOpenChange ? onOpenChange(o) : setInternalOpen(o);
   const [users, setUsers] = useState<ProfileMini[] | null>(null);
   const router = useRouter();
 
@@ -33,19 +42,21 @@ export function ClientQuickCreate({
 
   return (
     <>
-      <button
-        type="button"
-        onClick={() => setOpen(true)}
-        className={cn(
-          "inline-flex h-9 items-center gap-1.5 rounded-lg px-3 text-sm font-medium shadow-sm transition-colors",
-          variant === "primary"
-            ? "bg-brand-600 text-white hover:bg-brand-700"
-            : "border border-neutral-200 bg-white text-neutral-700 hover:bg-neutral-50",
-        )}
-      >
-        <Plus className="h-4 w-4" />
-        {label}
-      </button>
+      {hideTrigger ? null : (
+        <button
+          type="button"
+          onClick={() => setOpen(true)}
+          className={cn(
+            "inline-flex h-9 items-center gap-1.5 rounded-lg px-3 text-sm font-medium shadow-sm transition-colors",
+            variant === "primary"
+              ? "bg-brand-600 text-white hover:bg-brand-700"
+              : "border border-neutral-200 bg-white text-neutral-700 hover:bg-neutral-50",
+          )}
+        >
+          <Plus className="h-4 w-4" />
+          {label}
+        </button>
+      )}
 
       <Modal open={open} onClose={() => setOpen(false)} title="Neuer Kunde" size="lg">
         {users ? (

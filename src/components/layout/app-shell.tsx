@@ -8,6 +8,8 @@ import { Brand } from "@/components/brand";
 import { SidebarNav } from "@/components/layout/sidebar-nav";
 import { UserMenu } from "@/components/layout/user-menu";
 import { QuickCreate } from "@/components/tasks/quick-create";
+import { CommandTrigger } from "@/components/command/command-trigger";
+import { GlobalActions } from "@/components/command/global-actions";
 import { siteConfig } from "@/config/site";
 
 interface ShellUser {
@@ -105,6 +107,7 @@ export function AppShell({
               </span>
             </div>
             <div className="flex items-center gap-2 sm:gap-3">
+              <CommandTrigger />
               <QuickCreate />
               <UserMenu
                 fullName={user.fullName}
@@ -120,6 +123,9 @@ export function AppShell({
           </main>
         </div>
       </div>
+
+      {/* Globale Command-Palette (Cmd/Ctrl+K) + Tastatur-Schnellaktionen */}
+      <GlobalActions />
     </div>
   );
 }
