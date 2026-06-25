@@ -1,40 +1,57 @@
 import type { LucideIcon } from "lucide-react";
 import {
   LayoutDashboard,
-  ListChecks,
+  Radar,
   TrendingUp,
   Users,
   Factory,
-  Settings2,
   Wallet,
   Cog,
   UserCog,
   ShieldCheck,
-  KeyRound,
   Plug,
   Server,
   Sparkles,
+  BookOpen,
+  ClipboardList,
+  MessageSquareCode,
 } from "lucide-react";
 import type { RoleKey } from "@/config/roles";
 
-export interface NavItem {
-  /** Deutsche Beschriftung. */
+/** Ein anklickbarer Unterpunkt eines Hauptbereichs. */
+export interface NavChild {
   label: string;
-  /** Technischer Pfad (kebab-case, englisch) gemaess Blueprint. */
   href: string;
-  icon: LucideIcon;
-  /** Kurzbeschreibung fuer Tooltips / Platzhalterseiten. */
-  description: string;
-  /**
-   * Falls gesetzt: nur diese Rollen sehen den Eintrag.
-   * Leer/undefined = fuer alle eingeloggten Nutzer sichtbar.
-   * (Phase 1: einfache Sichtbarkeits-Steuerung, keine komplexe Rechte-Engine.)
-   */
+  /** Nur diese Rollen sehen den Unterpunkt (leer = alle). */
   roles?: RoleKey[];
 }
 
 /**
- * Hauptnavigation - die 7 Bereiche aus dem Blueprint (Abschnitt 2).
+ * Ein Hauptbereich der Navigation (Sidebar-Gruppe). Klick auf den Kopf fuehrt
+ * zu `href`; die Unterpunkte erscheinen aufgeklappt, wenn der Bereich aktiv ist.
+ */
+export interface NavItem {
+  label: string;
+  href: string;
+  icon: LucideIcon;
+  description: string;
+  /** Nur diese Rollen sehen den Bereich (leer/undefined = alle). */
+  roles?: RoleKey[];
+  children?: NavChild[];
+}
+
+/** Rollen-Konstanten (an mehreren Stellen wiederverwendet). */
+export const SALES_ROLES: RoleKey[] = ["super_admin", "ceo", "cso", "sales"];
+export const FINANCE_ROLES: RoleKey[] = ["super_admin", "ceo", "finance"];
+const LEADERSHIP_ROLES: RoleKey[] = ["super_admin", "ceo", "cso"];
+
+/**
+ * Hauptnavigation - die 7 Bereiche der produktionsreifen IA.
+ * Operations wurde entfernt; seine Inhalte sind verteilt:
+ *   - Growth Engine  -> Sales
+ *   - Meetings       -> Clients
+ *   - Wissen/SOPs/Prompts -> Settings
+ * Alle URLs bleiben stabil (keine toten Links/Bookmarks).
  */
 export const MAIN_NAV: NavItem[] = [
   {
@@ -42,117 +59,138 @@ export const MAIN_NAV: NavItem[] = [
     href: "/",
     icon: LayoutDashboard,
     description:
-      "Persoenliches Command Center: Was muss ich heute tun? Aufgaben, Termine, Follow-ups und Alerts auf einen Blick.",
+      "Persoenliches Cockpit: Aufgaben, Meetings, Follow-ups, Pipeline und Alerts fuer heute.",
+    children: [
+      { label: "Executive Dashboard", href: "/executive", roles: LEADERSHIP_ROLES },
+      { label: "Heute", href: "/tasks/today" },
+      { label: "Kalender", href: "/calendar" },
+      { label: "Benachrichtigungen", href: "/notifications" },
+    ],
   },
   {
-    label: "Aufgaben",
-    href: "/tasks",
-    icon: ListChecks,
+    label: "Leads",
+    href: "/sales/leads",
+    icon: Radar,
     description:
-      "Das zentrale Operations-System: alle Aufgaben als Board, Tabelle und Tagesansichten - Herzstueck des eCreator OS.",
+      "Akquise: Lead-Gewinnung, Pipeline, Website-Audits und Follow-ups bis zur Uebergabe an Sales.",
+    roles: SALES_ROLES,
+    children: [
+      { label: "Dashboard", href: "/sales/lead-engine" },
+      { label: "Leads", href: "/sales/leads" },
+      { label: "Pipeline", href: "/sales/pipeline" },
+      { label: "Website Audits", href: "/sales/audits" },
+      { label: "Follow-ups", href: "/sales/followups" },
+      { label: "Aktivitaeten", href: "/sales/activities" },
+    ],
   },
   {
     label: "Sales",
     href: "/sales",
     icon: TrendingUp,
     description:
-      "Akquise und Verkauf von Lead bis Abschluss: Pipeline, Leads, Opportunities, Angebote, Outreach und Termine.",
+      "Verkauf: Angebote, Vertraege, Proposals, Outreach-Automatisierung und Termine bis zum Abschluss.",
+    roles: SALES_ROLES,
+    children: [
+      { label: "Dashboard", href: "/sales" },
+      { label: "Angebote", href: "/sales/offers" },
+      { label: "Vertraege", href: "/sales/contracts" },
+      { label: "Proposal Engine", href: "/sales/proposals" },
+      { label: "Automatisierungen", href: "/sales/outreach" },
+      { label: "E-Mail Vorlagen", href: "/sales/outreach/templates" },
+      { label: "Kampagnen", href: "/sales/outreach/pipeline" },
+      { label: "Termine", href: "/sales/meetings" },
+      { label: "Growth Engine", href: "/operations/growth", roles: LEADERSHIP_ROLES },
+    ],
   },
   {
     label: "Clients",
     href: "/clients",
     icon: Users,
     description:
-      "Betreuung, Vertraege und Wachstum von Bestandskunden: Kundenprofile, Kontakte, Vertraege und Reporting-Calls.",
+      "Betreuung von Bestandskunden: Onboarding, Reporting-Calls, Projekte, Aufgaben und Offboarding.",
+    children: [
+      { label: "Kunden", href: "/clients/list" },
+      { label: "Onboarding", href: "/clients/onboarding" },
+      { label: "Reporting-Calls", href: "/clients/reporting" },
+      { label: "Projekte", href: "/clients/projects" },
+      { label: "Aufgaben", href: "/tasks" },
+      { label: "Aktivitaeten", href: "/clients/activities" },
+      { label: "Offboarding", href: "/clients/offboarding" },
+      { label: "Meetings", href: "/operations/meetings" },
+    ],
   },
   {
     label: "Production",
     href: "/production",
     icon: Factory,
     description:
-      "Lieferung aller Leistungen: Projekte, Aufgaben-Board, Content, Websites, Ad-Kampagnen, CRM-Builds und Drehs.",
-  },
-  {
-    label: "Operations",
-    href: "/operations",
-    icon: Settings2,
-    description:
-      "Interne Steuerung: Creator-Pool, Team & Auslastung, Automationen, AI-Engines und Dateien.",
+      "Lieferung aller Leistungen: Projekte, Content, Websites, CRM-Builds, Ads, Drehs, Creator-Pool und Assets.",
+    children: [
+      { label: "Dashboard", href: "/production" },
+      { label: "Projekte", href: "/production/projects" },
+      { label: "Content Produktionen", href: "/production/content" },
+      { label: "Webseiten", href: "/production/websites" },
+      { label: "CRM Builds", href: "/production/crm" },
+      { label: "Ads", href: "/production/ads" },
+      { label: "Shootings", href: "/production/shoots" },
+      { label: "Creator Pool", href: "/production/creators" },
+      { label: "Assets", href: "/production/assets" },
+    ],
   },
   {
     label: "Finance",
     href: "/finance",
     icon: Wallet,
     description:
-      "Rechnungen, Ausgaben, wiederkehrende Umsaetze (MRR/ARR) und finanzielle Berichte.",
-    roles: ["super_admin", "ceo", "finance"],
+      "Rechnungen, Umsatz, wiederkehrende Umsaetze (MRR), Forecast und Kosten.",
+    roles: FINANCE_ROLES,
+    children: [
+      { label: "Dashboard", href: "/finance" },
+      { label: "Umsatz", href: "/finance/monthly" },
+      { label: "MRR", href: "/finance/customers" },
+      { label: "Forecast", href: "/finance/forecast" },
+      { label: "Rechnungen", href: "/finance/invoices" },
+      { label: "Kosten", href: "/finance/expenses" },
+    ],
   },
   {
     label: "Settings",
     href: "/settings",
     icon: Cog,
     description:
-      "Organisation, Benutzer, Rollen & Rechte, Integrationen und System.",
-    roles: ["super_admin", "ceo", "cso"],
+      "Organisation, Benutzer, Rollen, Integrationen, AI sowie internes Wissen und SOPs.",
+    roles: ["super_admin", "ceo", "cso", "developer"],
+    children: [
+      { label: "Benutzer", href: "/settings/users", roles: ["super_admin", "ceo", "cso"] },
+      { label: "Rollen", href: "/settings/roles", roles: ["super_admin", "ceo", "cso"] },
+      { label: "Integrationen", href: "/settings/integrations", roles: ["super_admin", "ceo", "cso"] },
+      { label: "AI", href: "/settings/ai", roles: ["super_admin", "ceo", "developer"] },
+      { label: "Systemeinstellungen", href: "/settings/system", roles: ["super_admin", "ceo", "cso"] },
+      { label: "Wissen", href: "/operations/knowledge" },
+      { label: "SOPs", href: "/operations/sops" },
+      { label: "Prompts", href: "/operations/prompts" },
+    ],
   },
 ];
 
 /**
- * Unternavigation des Settings-Moduls (Phase-1-Struktur gemaess Prompt 1).
+ * Unternavigation des Settings-Moduls (horizontale Tabs im Settings-Layout).
  */
 /** Basis-Settings nur fuer Organisation/Leitung. */
 export const SETTINGS_BASE_ROLES: RoleKey[] = ["super_admin", "ceo", "cso"];
 /** AI- & Automations-Bereich: Leitung + Entwicklung. */
 export const SETTINGS_AI_ROLES: RoleKey[] = ["super_admin", "ceo", "developer"];
 
-export const SETTINGS_NAV: NavItem[] = [
-  {
-    label: "Benutzer",
-    href: "/settings/users",
-    icon: UserCog,
-    description:
-      "Mitarbeitende verwalten: vorhandene Konten ansehen, spaeter anlegen, aktivieren und deaktivieren.",
-    roles: SETTINGS_BASE_ROLES,
-  },
-  {
-    label: "Rollen",
-    href: "/settings/roles",
-    icon: ShieldCheck,
-    description: "Die 9 Rollen des eCreator OS und ihre Bedeutung.",
-    roles: SETTINGS_BASE_ROLES,
-  },
-  {
-    label: "Rechte",
-    href: "/settings/permissions",
-    icon: KeyRound,
-    description:
-      "Granulare Berechtigungen pro Modul - Grundstruktur fuer die spaetere Rechteverwaltung.",
-    roles: SETTINGS_BASE_ROLES,
-  },
-  {
-    label: "Integrationen",
-    href: "/settings/integrations",
-    icon: Plug,
-    description:
-      "Verbundene Drittsysteme (Google, Meta, Ads, E-Mail ...) - wird in spaeteren Phasen aktiviert.",
-    roles: SETTINGS_BASE_ROLES,
-  },
-  {
-    label: "System",
-    href: "/settings/system",
-    icon: Server,
-    description:
-      "Technischer Status, Version und Umgebungsinformationen der Plattform.",
-    roles: SETTINGS_BASE_ROLES,
-  },
-  {
-    label: "AI & Automationen",
-    href: "/settings/ai",
-    icon: Sparkles,
-    description:
-      "Prompt-Templates, Automation-Jobs, AI-Runs, Integrationen und Logs - das Fundament aller AI-Engines.",
-    roles: SETTINGS_AI_ROLES,
-  },
+export const SETTINGS_NAV: NavChild[] = [
+  { label: "Benutzer", href: "/settings/users", roles: SETTINGS_BASE_ROLES },
+  { label: "Rollen", href: "/settings/roles", roles: SETTINGS_BASE_ROLES },
+  { label: "Rechte", href: "/settings/permissions", roles: SETTINGS_BASE_ROLES },
+  { label: "Integrationen", href: "/settings/integrations", roles: SETTINGS_BASE_ROLES },
+  { label: "System", href: "/settings/system", roles: SETTINGS_BASE_ROLES },
+  { label: "AI & Automationen", href: "/settings/ai", roles: SETTINGS_AI_ROLES },
+  { label: "Wissen", href: "/operations/knowledge" },
+  { label: "SOPs", href: "/operations/sops" },
+  { label: "Prompts", href: "/operations/prompts" },
 ];
 
 /** Wer den Settings-Bereich grundsaetzlich betreten darf (Union). */
@@ -162,3 +200,15 @@ export const SETTINGS_NAV_ROLES: RoleKey[] = [
   "cso",
   "developer",
 ];
+
+/** Icons fuer die Settings-Sub-Nav (optional verwendet). */
+export const SETTINGS_NAV_ICONS = {
+  users: UserCog,
+  roles: ShieldCheck,
+  integrations: Plug,
+  system: Server,
+  ai: Sparkles,
+  knowledge: BookOpen,
+  sops: ClipboardList,
+  prompts: MessageSquareCode,
+} as const;

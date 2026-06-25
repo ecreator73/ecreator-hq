@@ -19,7 +19,6 @@ export function SettingsNav({ roles }: { roles: RoleKey[] }) {
       {items.map((item) => {
         const active =
           pathname === item.href || pathname.startsWith(`${item.href}/`);
-        const Icon = item.icon;
         return (
           <Link
             key={item.href}
@@ -32,7 +31,6 @@ export function SettingsNav({ roles }: { roles: RoleKey[] }) {
                 : "border-transparent text-neutral-500 hover:text-neutral-800",
             )}
           >
-            <Icon className="h-4 w-4" />
             {item.label}
           </Link>
         );

@@ -3,20 +3,27 @@ import {
   AlertTriangle,
   ArrowRight,
   CalendarClock,
+  CalendarDays,
   Flame,
-  UserRound,
+  PhoneCall,
+  Repeat2,
+  Users,
 } from "lucide-react";
 import { requireUser } from "@/lib/auth";
 import { canAccess } from "@/lib/permissions";
 import { roleLabel } from "@/config/roles";
-import { MAIN_NAV } from "@/config/navigation";
 import {
   tasksService,
   salesDashboardService,
   clientsOpsService,
+  productionDashboardService,
   financeService,
+  calendarService,
 } from "@/server/services";
 import { TaskList } from "@/components/tasks/task-list";
+import { QuickCreate } from "@/components/tasks/quick-create";
+import { LeadQuickCreate } from "@/components/sales/lead-quick-create";
+import { ClientQuickCreate } from "@/components/clients/client-quick-create";
 import { today } from "@/lib/dates";
 import { formatCHF } from "@/lib/utils";
 import { PageHeader } from "@/components/page-header";
@@ -24,13 +31,90 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { GrowthCommandCenter } from "@/components/growth-engine/growth-command-center";
 import type { TaskWithRelations, FinanceSummary } from "@/types/entities";
-import type { SalesDashboardData } from "@/server/services";
+import type {
+  SalesDashboardData,
+  GlobalCalendarEvent,
+  ProductionSummary,
+} from "@/server/services";
 
 const FINANCE_ROLES = ["super_admin", "ceo", "finance"] as const;
+const LEADERSHIP = ["super_admin", "ceo", "cso"] as const;
+
+function StatCard({
+  value,
+  label,
+  href,
+  icon: Icon,
+  tone,
+}: {
+  value: string | number;
+  label: string;
+  href: string;
+  icon: React.ComponentType<{ className?: string }>;
+  tone?: "danger" | "default";
+}) {
+  return (
+    <Link href={href} className="group">
+      <Card className="transition-colors hover:border-brand-300">
+        <CardContent className="flex items-center justify-between p-5">
+          <div>
+            <p className={`text-2xl font-semibold ${tone === "danger" && value ? "text-red-600" : "text-neutral-900"}`}>
+              {value}
+            </p>
+            <p className="text-sm text-neutral-500">{label}</p>
+          </div>
+          <span className="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-neutral-100 text-neutral-500 group-hover:bg-brand-50 group-hover:text-brand-600">
+            <Icon className="h-5 w-5" />
+          </span>
+        </CardContent>
+      </Card>
+    </Link>
+  );
+}
+
+function MiniList({
+  title,
+  href,
+  events,
+  empty,
+}: {
+  title: string;
+  href: string;
+  events: GlobalCalendarEvent[];
+  empty: string;
+}) {
+  return (
+    <Card className="h-full">
+      <CardHeader className="flex-row items-center justify-between">
+        <CardTitle className="text-sm">{title}</CardTitle>
+        <Link href={href} className="text-xs font-medium text-brand-600 hover:underline">
+          Alle
+        </Link>
+      </CardHeader>
+      <CardContent>
+        {events.length === 0 ? (
+          <p className="py-4 text-center text-sm text-neutral-400">{empty}</p>
+        ) : (
+          <ul className="divide-y divide-neutral-100">
+            {events.slice(0, 6).map((e) => (
+              <li key={e.id}>
+                <Link href={e.href} className="flex items-center gap-2 py-2 text-sm hover:text-brand-700">
+                  <span className="flex-1 truncate font-medium text-neutral-800">{e.title}</span>
+                  {e.subtitle ? <span className="shrink-0 text-xs text-neutral-400">{e.subtitle}</span> : null}
+                </Link>
+              </li>
+            ))}
+          </ul>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
 
 export default async function HomePage() {
   const user = await requireUser();
   const firstName = user.fullName.split(/\s+/)[0] ?? user.fullName;
+  const todayStr = today();
 
   let counts = { today: 0, overdue: 0, critical: 0, mine: 0 };
   let todayTasks: TaskWithRelations[] = [];
@@ -38,13 +122,22 @@ export default async function HomePage() {
     counts = await tasksService.dashboardCounts(user.id);
     todayTasks = (
       await tasksService.list(
-        { dueTo: today(), excludeStatus: ["done", "archived"] },
+        { dueTo: todayStr, excludeStatus: ["done", "archived"] },
         { pageSize: 8, sort: { column: "due_date", ascending: true } },
       )
     ).rows;
   } catch {
-    // Demo-Modus / keine DB -> Nullwerte + leere Liste
+    /* Demo-Modus */
   }
+
+  let todayEvents: GlobalCalendarEvent[] = [];
+  try {
+    todayEvents = await calendarService.events(todayStr, todayStr);
+  } catch {
+    todayEvents = [];
+  }
+  const meetingsToday = todayEvents.filter((e) => e.category === "meeting");
+  const followupsToday = todayEvents.filter((e) => e.category === "followup");
 
   let sales: SalesDashboardData | null = null;
   try {
@@ -52,13 +145,6 @@ export default async function HomePage() {
   } catch {
     sales = null;
   }
-  const salesStats = [
-    { label: "Follow-ups heute", value: String(sales?.followupsToday ?? 0), href: "/sales/followups" },
-    { label: "Heisse Leads", value: String(sales?.hotLeads ?? 0), href: "/sales/leads" },
-    { label: "Pipeline-Wert", value: formatCHF(sales?.pipelineValue ?? 0), href: "/sales/pipeline" },
-    { label: "Offene Angebote", value: String(sales?.openOffers ?? 0), href: "/sales/offers" },
-    { label: "Vertraege laufen aus", value: String(sales?.contractsExpiring ?? 0), href: "/sales/contracts" },
-  ];
 
   let clientDash: Awaited<ReturnType<typeof clientsOpsService.dashboard>> | null = null;
   try {
@@ -66,15 +152,14 @@ export default async function HomePage() {
   } catch {
     clientDash = null;
   }
-  const clientStats = [
-    { label: "Aktive Kunden", value: String(clientDash?.active ?? 0), href: "/clients/list" },
-    { label: "MRR", value: formatCHF(clientDash?.totalMrr ?? 0), href: "/clients" },
-    { label: "Reporting diese Woche", value: String(clientDash?.reportingThisWeek ?? 0), href: "/clients/reporting" },
-    { label: "Kunden ohne Kontakt", value: String(clientDash?.noContact ?? 0), href: "/clients" },
-    { label: "Offene Aufgaben (Kunden)", value: String(clientDash?.withOpenTasks ?? 0), href: "/clients" },
-  ];
 
-  // Finance-Widgets nur fuer berechtigte Rollen (super_admin/ceo/finance).
+  let prod: ProductionSummary | null = null;
+  try {
+    prod = await productionDashboardService.safeSummary();
+  } catch {
+    prod = null;
+  }
+
   const showFinance = canAccess(user.roles, [...FINANCE_ROLES]);
   let finance: FinanceSummary | null = null;
   if (showFinance) {
@@ -84,32 +169,15 @@ export default async function HomePage() {
       finance = null;
     }
   }
-  const financeStats = [
-    { label: "Umsatz Monat", value: formatCHF(finance?.monthRevenue ?? 0), href: "/finance" },
-    { label: "MRR", value: formatCHF(finance?.mrr ?? 0), href: "/finance" },
-    { label: "Offene Rechnungen", value: String(finance?.openInvoicesCount ?? 0), href: "/finance/open" },
-    { label: "Ueberfaellige Rechnungen", value: String(finance?.overdueInvoicesCount ?? 0), href: "/finance/open" },
-  ];
-
-  const stats = [
-    { label: "Heute faellig", value: counts.today, href: "/tasks/today", icon: CalendarClock },
-    { label: "Ueberfaellig", value: counts.overdue, href: "/tasks/today", icon: AlertTriangle },
-    { label: "Kritisch", value: counts.critical, href: "/tasks/table?priority=urgent", icon: Flame },
-    { label: "Meine Aufgaben", value: counts.mine, href: "/tasks/mine", icon: UserRound },
-  ];
-
-  const quickAccess = MAIN_NAV.filter(
-    (item) => item.href !== "/" && canAccess(user.roles, item.roles),
-  );
 
   return (
     <div className="space-y-6">
       <PageHeader
-        eyebrow="Home · Command Center"
+        eyebrow="Home · Cockpit"
         title={`Willkommen zurueck, ${firstName}`}
-        description="Was muss heute gemacht werden?"
+        description="Dein Tag auf einen Blick: was heute ansteht und wo Prioritaet ist."
         actions={
-          canAccess(user.roles, ["super_admin", "ceo", "cso"]) ? (
+          canAccess(user.roles, [...LEADERSHIP]) ? (
             <Link
               href="/executive"
               className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-neutral-900 px-3 text-sm font-medium text-white shadow-sm transition-colors hover:bg-neutral-800"
@@ -121,131 +189,90 @@ export default async function HomePage() {
         }
       />
 
-      {/* Growth Command Center (Executive-Schicht, nur super_admin/ceo/cso) */}
-      {canAccess(user.roles, ["super_admin", "ceo", "cso"]) ? (
-        <GrowthCommandCenter />
-      ) : null}
+      {/* Quick Actions */}
+      <Card>
+        <CardContent className="flex flex-wrap items-center gap-2 p-4">
+          <span className="mr-1 text-sm font-medium text-neutral-500">Schnell erstellen:</span>
+          <QuickCreate variant="secondary" label="Aufgabe" />
+          <LeadQuickCreate variant="secondary" label="Lead" />
+          <ClientQuickCreate variant="secondary" label="Kunde" />
+          <Link href="/calendar" className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-neutral-200 bg-white px-3 text-sm font-medium text-neutral-700 shadow-sm transition-colors hover:bg-neutral-50">
+            <CalendarDays className="h-4 w-4" />
+            Kalender
+          </Link>
+        </CardContent>
+      </Card>
 
-      {/* Aufgaben-Widgets */}
+      {canAccess(user.roles, [...LEADERSHIP]) ? <GrowthCommandCenter /> : null}
+
+      {/* Heute auf einen Blick */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {stats.map((s) => {
-          const Icon = s.icon;
-          return (
-            <Link key={s.label} href={s.href} className="group">
-              <Card className="transition-colors hover:border-brand-300">
-                <CardContent className="flex items-center justify-between p-5">
-                  <div>
-                    <p className="text-2xl font-semibold text-neutral-900">
-                      {s.value}
-                    </p>
-                    <p className="text-sm text-neutral-500">{s.label}</p>
-                  </div>
-                  <span className="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-neutral-100 text-neutral-500 group-hover:bg-brand-50 group-hover:text-brand-600">
-                    <Icon className="h-5 w-5" />
-                  </span>
-                </CardContent>
-              </Card>
-            </Link>
-          );
-        })}
+        <StatCard value={counts.today} label="Aufgaben heute" href="/tasks/today" icon={CalendarClock} />
+        <StatCard value={counts.overdue} label="Ueberfaellige Aufgaben" href="/tasks/today" icon={AlertTriangle} tone="danger" />
+        <StatCard value={String(sales?.followupsToday ?? 0)} label="Follow-ups heute" href="/sales/followups" icon={Repeat2} />
+        <StatCard value={String(clientDash?.reportingThisWeek ?? 0)} label="Reporting diese Woche" href="/clients/reporting" icon={PhoneCall} />
       </div>
 
-      {/* Sales auf einen Blick */}
+      {/* Drei Spalten: heute */}
+      <div className="grid gap-4 lg:grid-cols-3">
+        <Card className="h-full">
+          <CardHeader className="flex-row items-center justify-between">
+            <CardTitle className="flex items-center gap-2 text-sm">
+              <CalendarClock className="h-4 w-4 text-brand-600" />
+              Aufgaben heute &amp; ueberfaellig
+            </CardTitle>
+            <Link href="/tasks" className="text-xs font-medium text-brand-600 hover:underline">Alle</Link>
+          </CardHeader>
+          <CardContent>
+            <TaskList tasks={todayTasks} emptyTitle="Nichts faellig" emptyDescription="Keine faelligen Aufgaben." />
+          </CardContent>
+        </Card>
+        <MiniList title="Meetings heute" href="/calendar?view=day" events={meetingsToday} empty="Keine Meetings heute." />
+        <MiniList title="Follow-ups heute" href="/sales/followups" events={followupsToday} empty="Keine Follow-ups heute." />
+      </div>
+
+      {/* Sales */}
       <div>
-        <h2 className="mb-3 text-sm font-semibold text-neutral-700">
-          Sales auf einen Blick
-        </h2>
+        <h2 className="mb-3 text-sm font-semibold text-neutral-700">Sales &amp; Pipeline</h2>
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
-          {salesStats.map((s) => (
-            <Link key={s.label} href={s.href} className="group">
-              <Card className="transition-colors hover:border-brand-300">
-                <CardContent className="p-5">
-                  <p className="text-xl font-semibold text-neutral-900">
-                    {s.value}
-                  </p>
-                  <p className="mt-0.5 text-sm text-neutral-500">{s.label}</p>
-                </CardContent>
-              </Card>
-            </Link>
-          ))}
+          <StatCard value={String(sales?.hotLeads ?? 0)} label="Heisse Leads" href="/sales/leads" icon={Flame} />
+          <StatCard value={formatCHF(sales?.pipelineValue ?? 0)} label="Pipeline-Wert" href="/sales/pipeline" icon={ArrowRight} />
+          <StatCard value={String(sales?.openOffers ?? 0)} label="Offene Angebote" href="/sales/offers" icon={ArrowRight} />
+          <StatCard value={String(sales?.contractsExpiring ?? 0)} label="Vertraege laufen aus" href="/sales/contracts" icon={AlertTriangle} tone="danger" />
+          <StatCard value={String(clientDash?.active ?? 0)} label="Aktive Kunden" href="/clients/list" icon={Users} />
         </div>
       </div>
 
-      {/* Customer Success auf einen Blick */}
+      {/* Production */}
       <div>
-        <h2 className="mb-3 text-sm font-semibold text-neutral-700">
-          Customer Success
-        </h2>
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
-          {clientStats.map((s) => (
-            <Link key={s.label} href={s.href} className="group">
-              <Card className="transition-colors hover:border-brand-300">
-                <CardContent className="p-5">
-                  <p className="text-xl font-semibold text-neutral-900">
-                    {s.value}
-                  </p>
-                  <p className="mt-0.5 text-sm text-neutral-500">{s.label}</p>
-                </CardContent>
-              </Card>
-            </Link>
-          ))}
+        <h2 className="mb-3 text-sm font-semibold text-neutral-700">Production</h2>
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <StatCard value={prod?.runningProjects ?? 0} label="Laufende Projekte" href="/production/projects" icon={ArrowRight} />
+          <StatCard value={prod?.atRisk ?? 0} label="Kritische Projekte" href="/production/projects" icon={AlertTriangle} tone="danger" />
+          <StatCard value={prod?.overdueTasks ?? 0} label="Ueberfaellige Aufgaben" href="/tasks/table" icon={Flame} tone="danger" />
+          <StatCard value={prod?.shootsThisWeek ?? 0} label="Shootings diese Woche" href="/production/shoots" icon={CalendarDays} />
         </div>
       </div>
 
-      {/* Finance auf einen Blick (nur berechtigte Rollen) */}
+      {/* Finance (gated) */}
       {showFinance ? (
         <div>
-          <h2 className="mb-3 text-sm font-semibold text-neutral-700">
-            Finance
-          </h2>
+          <h2 className="mb-3 text-sm font-semibold text-neutral-700">Finance</h2>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            {financeStats.map((s) => (
-              <Link key={s.label} href={s.href} className="group">
-                <Card className="transition-colors hover:border-brand-300">
-                  <CardContent className="p-5">
-                    <p className="text-xl font-semibold text-neutral-900">
-                      {s.value}
-                    </p>
-                    <p className="mt-0.5 text-sm text-neutral-500">{s.label}</p>
-                  </CardContent>
-                </Card>
-              </Link>
-            ))}
+            <StatCard value={formatCHF(finance?.monthRevenue ?? 0)} label="Umsatz Monat" href="/finance" icon={ArrowRight} />
+            <StatCard value={formatCHF(finance?.mrr ?? 0)} label="MRR" href="/finance/customers" icon={ArrowRight} />
+            <StatCard value={String(finance?.openInvoicesCount ?? 0)} label="Offene Rechnungen" href="/finance/open" icon={ArrowRight} />
+            <StatCard value={String(finance?.overdueInvoicesCount ?? 0)} label="Ueberfaellige Rechnungen" href="/finance/open" icon={AlertTriangle} tone="danger" />
           </div>
         </div>
       ) : null}
 
-      {/* Heute & ueberfaellig */}
-      <Card>
-        <CardHeader className="flex-row items-center justify-between">
-          <CardTitle className="flex items-center gap-2">
-            <CalendarClock className="h-4 w-4 text-brand-600" />
-            Heute &amp; ueberfaellig
-          </CardTitle>
-          <Link
-            href="/tasks"
-            className="text-sm font-medium text-brand-600 hover:underline"
-          >
-            Alle Aufgaben
-          </Link>
-        </CardHeader>
-        <CardContent>
-          <TaskList
-            tasks={todayTasks}
-            emptyTitle="Nichts faellig"
-            emptyDescription="Aktuell stehen keine faelligen oder ueberfaelligen Aufgaben an."
-          />
-        </CardContent>
-      </Card>
-
       {/* Identitaet */}
       <Card>
-        <CardContent className="flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:justify-between sm:p-6">
+        <CardContent className="flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <p className="text-sm text-neutral-500">Angemeldet als</p>
-            <p className="mt-0.5 text-base font-semibold text-neutral-900">
-              {user.fullName}
-            </p>
+            <p className="mt-0.5 text-base font-semibold text-neutral-900">{user.fullName}</p>
             <p className="text-sm text-neutral-500">{user.email}</p>
           </div>
           <div className="flex items-center gap-2">
@@ -254,38 +281,6 @@ export default async function HomePage() {
           </div>
         </CardContent>
       </Card>
-
-      {/* Schnellzugriff */}
-      <div>
-        <h2 className="mb-3 text-sm font-semibold text-neutral-700">
-          Schnellzugriff
-        </h2>
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {quickAccess.map((item) => {
-            const Icon = item.icon;
-            return (
-              <Link key={item.href} href={item.href} className="group">
-                <Card className="h-full transition-colors hover:border-brand-300">
-                  <CardContent className="flex h-full flex-col gap-3 p-5">
-                    <span className="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-brand-50 text-brand-600">
-                      <Icon className="h-5 w-5" />
-                    </span>
-                    <div>
-                      <div className="flex items-center gap-1 text-sm font-semibold text-neutral-900">
-                        {item.label}
-                        <ArrowRight className="h-3.5 w-3.5 text-neutral-300 transition-transform group-hover:translate-x-0.5 group-hover:text-brand-500" />
-                      </div>
-                      <p className="mt-1 line-clamp-2 text-xs text-neutral-500">
-                        {item.description}
-                      </p>
-                    </div>
-                  </CardContent>
-                </Card>
-              </Link>
-            );
-          })}
-        </div>
-      </div>
     </div>
   );
 }

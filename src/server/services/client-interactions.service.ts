@@ -8,7 +8,27 @@ import type { ClientInteraction } from "@/types/entities";
 const CI_SELECT =
   "*, author:profiles!client_interactions_created_by_fkey(id,full_name)";
 
+/** Eintrag des globalen Kunden-Aktivitaetsfeeds (inkl. Kundenname). */
+export interface ClientInteractionWithClient extends ClientInteraction {
+  client: { id: string; name: string } | null;
+}
+
 export const clientInteractionsService = {
+  /** Letzte Interaktionen ueber ALLE Kunden (Aktivitaetsfeed). */
+  async recent(limit = 50): Promise<ClientInteractionWithClient[]> {
+    const { supabase } = await getContext();
+    const { data, error } = await supabase
+      .from("client_interactions")
+      .select(
+        "*, author:profiles!client_interactions_created_by_fkey(id,full_name), client:clients!client_interactions_client_id_fkey(id,name)",
+      )
+      .order("interaction_date", { ascending: false })
+      .limit(limit);
+    if (error)
+      throw new ServiceError("Aktivitaeten konnten nicht geladen werden", error);
+    return (data ?? []) as unknown as ClientInteractionWithClient[];
+  },
+
   async listByClient(clientId: string): Promise<ClientInteraction[]> {
     const { supabase } = await getContext();
     const { data, error } = await supabase
