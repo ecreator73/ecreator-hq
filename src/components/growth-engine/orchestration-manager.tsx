@@ -17,7 +17,7 @@ import type { AutomationOrchestration } from "@/types/entities";
 /**
  * Verwaltet die Orchestrierungs-Regeln (Trigger -> Aktion). Regeln sind
  * Vorschlags-Regeln: sie erzeugen Empfehlungen/Aufgaben, fuehren aber nie
- * ungefragt E-Mails/Vertraege/Rechnungen aus.
+ * ungefragt E-Mails/Verträge/Rechnungen aus.
  */
 export function OrchestrationManager({
   items,

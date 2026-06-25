@@ -108,7 +108,7 @@ export function ClientDetail({
     { key: "projects", label: "Projekte", count: projects.length },
     { key: "tasks", label: "Aufgaben", count: openTasks.length },
     { key: "reporting", label: "Reporting Calls", count: reportingCalls.length },
-    { key: "contracts", label: "Vertraege", count: contracts.length },
+    { key: "contracts", label: "Verträge", count: contracts.length },
     { key: "files", label: "Dateien", count: files.length },
     { key: "finance", label: "Finanzen" },
     { key: "activity", label: "Aktivitaet" },

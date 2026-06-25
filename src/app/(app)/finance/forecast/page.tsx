@@ -32,7 +32,7 @@ export default async function FinanceForecastPage() {
       <div>
         <h2 className="text-lg font-semibold text-neutral-900">Forecast</h2>
         <p className="mt-1 text-sm text-neutral-500">
-          Prognose aus aktiven Vertraegen (Vertragsenden beruecksichtigt)
+          Prognose aus aktiven Verträgen (Vertragsenden beruecksichtigt)
           abzueglich wiederkehrender Kosten.
         </p>
       </div>

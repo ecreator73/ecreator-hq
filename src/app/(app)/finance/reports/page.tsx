@@ -83,7 +83,7 @@ export default async function FinanceReportsPage() {
           {rep.topClients.length === 0 ? (
             <EmptyState
               title="Noch keine Kundenwerte"
-              description="Sobald Vertraege und bezahlte Rechnungen erfasst sind, erscheinen hier die wertvollsten Kunden."
+              description="Sobald Verträge und bezahlte Rechnungen erfasst sind, erscheinen hier die wertvollsten Kunden."
             />
           ) : (
             <div className="overflow-x-auto rounded-lg border border-neutral-200">

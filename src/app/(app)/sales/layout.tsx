@@ -14,7 +14,7 @@ export default async function SalesLayout({
       <PageHeader
         eyebrow="Sales"
         title="Sales CRM"
-        description="Von Lead bis Abschluss - Pipeline, Follow-ups, Angebote und Vertraege."
+        description="Von Lead bis Abschluss - Pipeline, Follow-ups, Angebote und Verträge."
         actions={<LeadQuickCreate />}
       />
       <SalesNav />

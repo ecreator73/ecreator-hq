@@ -204,7 +204,7 @@ export function OverviewTab({
             size="sm"
             onClick={() => onTab("contracts")}
           >
-            Alle Vertraege
+            Alle Verträge
           </Button>
         }
       >

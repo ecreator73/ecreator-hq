@@ -14,7 +14,7 @@ export function ForecastTable({ months }: { months: ForecastMonth[] }) {
       <EmptyState
         icon={TrendingUp}
         title="Keine Forecast-Daten"
-        description="Sobald wiederkehrende Vertraege und Kosten erfasst sind, erscheint hier die Vorschau."
+        description="Sobald wiederkehrende Verträge und Kosten erfasst sind, erscheint hier die Vorschau."
       />
     );
   }

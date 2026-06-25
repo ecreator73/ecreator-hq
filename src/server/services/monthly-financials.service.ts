@@ -21,7 +21,7 @@ function firstOfMonth(year: number, month1to12: number): string {
 }
 
 /**
- * Manuelle Monatsfinanzen. Bewusst entkoppelt von Rechnungen/Vertraegen -
+ * Manuelle Monatsfinanzen. Bewusst entkoppelt von Rechnungen/Verträgen -
  * reine Handerfassung von Umsaetzen und Kosten pro Monat.
  */
 export const monthlyFinancialsService = {

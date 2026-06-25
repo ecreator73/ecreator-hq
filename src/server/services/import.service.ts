@@ -12,7 +12,7 @@ import {
 
 /**
  * Import-Engine. Validiert Rohzeilen (CSV) gegen die Spec, erkennt Dubletten
- * (Kunde per Name) und schreibt Kunden/Vertraege/Rechnungen in die bestehenden
+ * (Kunde per Name) und schreibt Kunden/Verträge/Rechnungen in die bestehenden
  * Tabellen ueber die Service-Schicht (inkl. Validierung + Audit). Bietet je
  * Import-Typ eine `preview*`- (kein Schreiben) und eine `import*`-Methode.
  */
@@ -223,7 +223,7 @@ export const importService = {
     return result;
   },
 
-  /** Vertraege zu bestehenden Kunden importieren (Match per Name). */
+  /** Verträge zu bestehenden Kunden importieren (Match per Name). */
   async importContracts(rawRows: Raw[], mapping: Mapping): Promise<ImportResult> {
     const nameMap = await loadClientNameMap();
     const result: ImportResult = {
@@ -331,7 +331,7 @@ export const importService = {
     return { updated, errors };
   },
 
-  /** Bulk-Edit: gleiche Aenderung auf viele Vertraege anwenden. */
+  /** Bulk-Edit: gleiche Aenderung auf viele Verträge anwenden. */
   async bulkUpdateContracts(
     ids: string[],
     patch: { status?: string },

@@ -260,7 +260,7 @@ export interface ClientWarning {
 
 /** Kunde angereichert mit Customer-Success-Kennzahlen + Warnungen. */
 export interface ClientWithStats extends Client {
-  mrr: number; // Rappen (Summe aktiver Vertraege)
+  mrr: number; // Rappen (Summe aktiver Verträge)
   open_tasks: number;
   last_contact: string | null;
   next_reporting: string | null;

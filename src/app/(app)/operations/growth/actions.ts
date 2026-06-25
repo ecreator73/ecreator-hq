@@ -18,7 +18,7 @@ import type { AssistantAnswer } from "@/types/entities";
 /**
  * Server Actions der Autonomous Growth Engine. Nur super_admin/ceo/cso duerfen
  * die Orchestrierung steuern (zusaetzlich zur RLS). Die Engine erzeugt
- * Aufgaben/Alerts - sie versendet NIE ungefragt E-Mails/Vertraege/Rechnungen.
+ * Aufgaben/Alerts - sie versendet NIE ungefragt E-Mails/Verträge/Rechnungen.
  */
 
 export type ActionResult<T = undefined> =

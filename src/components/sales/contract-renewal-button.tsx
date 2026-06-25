@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { createRenewalTasksAction } from "@/app/(app)/sales/actions";
 
 /**
- * Erzeugt fuer alle auslaufenden Vertraege (naechste 90 Tage) je eine
+ * Erzeugt fuer alle auslaufenden Verträge (naechste 90 Tage) je eine
  * Verlaengerungs-Aufgabe. Zeigt die Anzahl der erstellten Aufgaben als Hinweis.
  */
 export function ContractRenewalButton() {
@@ -55,7 +55,7 @@ export function ContractRenewalButton() {
           <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0" />
           <span>
             {info === 0
-              ? "Keine auslaufenden Vertraege - keine Aufgaben erstellt."
+              ? "Keine auslaufenden Verträge - keine Aufgaben erstellt."
               : `${info} Verlaengerungs-Aufgabe(n) erstellt.`}
           </span>
         </div>

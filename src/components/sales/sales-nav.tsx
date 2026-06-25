@@ -14,7 +14,7 @@ const TABS = [
   { label: "Pipeline", href: "/sales/pipeline" },
   { label: "Termine", href: "/sales/meetings" },
   { label: "Angebote", href: "/sales/offers" },
-  { label: "Vertraege", href: "/sales/contracts" },
+  { label: "Verträge", href: "/sales/contracts" },
   { label: "Aktivitaeten", href: "/sales/activities" },
   { label: "Follow-ups", href: "/sales/followups" },
 ];

@@ -62,7 +62,7 @@ export const executiveService = {
     const push = (category: string, severity: string, title: string, href?: string) =>
       alerts.push({ category, severity, title, href });
     if ((fin?.overdueInvoicesCount ?? 0) > 0) push("finance", "high", `${fin!.overdueInvoicesCount} Rechnung(en) ueberfaellig`, "/finance/open");
-    if ((clients?.contractsExpiring ?? 0) > 0) push("contract", "high", `${clients!.contractsExpiring} Vertrag/Vertraege laufen aus`, "/clients");
+    if ((clients?.contractsExpiring ?? 0) > 0) push("contract", "high", `${clients!.contractsExpiring} Vertrag/Verträge laufen aus`, "/clients");
     if ((prod?.atRisk ?? 0) > 0) push("project", "high", `${prod!.atRisk} Projekt(e) mit Risiko`, "/production");
     if ((prod?.overdueTasks ?? 0) > 0) push("project", "medium", `${prod!.overdueTasks} ueberfaellige Aufgaben`, "/tasks/today");
     if (overloaded > 0) push("team", "high", `${overloaded} ueberlastete Mitarbeiter`, "/production/workload");

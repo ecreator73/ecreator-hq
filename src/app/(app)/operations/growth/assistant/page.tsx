@@ -43,7 +43,7 @@ export default function GrowthAssistantPage() {
               <Database className="mt-0.5 h-4 w-4 shrink-0 text-brand-600" />
               <span>
                 Die Antworten stammen direkt aus deinen echten Daten - Leads,
-                Kunden, Vertraege und Projekte - nicht aus einem generischen
+                Kunden, Verträge und Projekte - nicht aus einem generischen
                 Sprachmodell.
               </span>
             </li>

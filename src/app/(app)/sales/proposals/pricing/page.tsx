@@ -63,7 +63,7 @@ export default async function ProposalsPricingPage() {
     <div className="space-y-5">
       <PageHeader
         title="Preise"
-        description="Preisvorlagen fuer Offerten und Vertraege. Beim Erstellen einer Position lassen sich diese Vorlagen wiederverwenden."
+        description="Preisvorlagen fuer Offerten und Verträge. Beim Erstellen einer Position lassen sich diese Vorlagen wiederverwenden."
         actions={<PricingQuickCreate />}
       />
 
@@ -80,7 +80,7 @@ export default async function ProposalsPricingPage() {
           {items.length === 0 ? (
             <EmptyState
               title="Keine Preisvorlagen vorhanden"
-              description="Lege wiederverwendbare Preise an, um Offerten und Vertraege schneller zu erstellen."
+              description="Lege wiederverwendbare Preise an, um Offerten und Verträge schneller zu erstellen."
               action={<PricingQuickCreate />}
             />
           ) : (

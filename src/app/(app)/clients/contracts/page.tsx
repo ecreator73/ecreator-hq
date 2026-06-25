@@ -13,7 +13,7 @@ import { contractsService, clientsService } from "@/server/services";
 import { CONTRACT_STATUSES, CONTRACT_TYPES, statusLabel } from "@/config/catalog";
 import { formatCHF, formatDate } from "@/lib/utils";
 
-export const metadata: Metadata = { title: "Vertraege" };
+export const metadata: Metadata = { title: "Verträge" };
 
 export default async function ClientContractsPage() {
   const [contracts, clients] = await Promise.all([
@@ -40,21 +40,21 @@ export default async function ClientContractsPage() {
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
-        <KpiCard label="Aktive Vertraege" value={active.length} tone="brand" />
+        <KpiCard label="Aktive Verträge" value={active.length} tone="brand" />
         <KpiCard label="MRR" value={formatCHF(totalMrr)} />
         <KpiCard label="Gesamtwert (aktiv)" value={formatCHF(totalValue)} />
-        <KpiCard label="Vertraege gesamt" value={contracts.length} />
+        <KpiCard label="Verträge gesamt" value={contracts.length} />
       </div>
 
       <Card>
         <CardHeader>
-          <CardTitle>Vertraege ({contracts.length})</CardTitle>
+          <CardTitle>Verträge ({contracts.length})</CardTitle>
         </CardHeader>
         <CardContent>
           {contracts.length === 0 ? (
             <EmptyState
-              title="Noch keine Vertraege"
-              description="Importiere Vertraege ueber den Import-Tab."
+              title="Noch keine Verträge"
+              description="Importiere Verträge ueber den Import-Tab."
             />
           ) : (
             <div className="overflow-x-auto rounded-lg border border-neutral-200">

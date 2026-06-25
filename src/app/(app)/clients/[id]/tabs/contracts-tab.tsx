@@ -8,7 +8,7 @@ import { formatCHF, formatDate } from "@/lib/utils";
 import { statusColorOf, Meta } from "../detail-ui";
 import type { Contract } from "@/types/entities";
 
-/** Laufzeit-Warnung fuer aktive Vertraege mit Enddatum. */
+/** Laufzeit-Warnung fuer aktive Verträge mit Enddatum. */
 function contractWarning(c: Contract) {
   if (c.status !== "active" || !c.end_date) return null;
   const daysLeft = Math.round((Date.parse(c.end_date) - Date.now()) / 86400000);
@@ -25,7 +25,7 @@ export function ContractsTab({ contracts }: { contracts: Contract[] }) {
   if (contracts.length === 0) {
     return (
       <EmptyState
-        title="Keine Vertraege"
+        title="Keine Verträge"
         description="Fuer diesen Kunden ist kein Vertrag erfasst."
       />
     );

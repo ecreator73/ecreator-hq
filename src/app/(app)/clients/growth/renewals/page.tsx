@@ -37,14 +37,14 @@ export default async function RenewalsPage() {
       <CardHeader className="gap-2">
         <CardTitle>Verlaengerungen ({rns.length})</CardTitle>
         <p className="text-sm text-neutral-500">
-          Vertraege mit Ende in 90 Tagen werden automatisch erfasst.
+          Verträge mit Ende in 90 Tagen werden automatisch erfasst.
         </p>
       </CardHeader>
       <CardContent>
         {rns.length === 0 ? (
           <EmptyState
             title="Keine anstehenden Verlaengerungen"
-            description="Sobald Vertraege in den naechsten 90 Tagen auslaufen, erscheinen sie hier automatisch zur Bearbeitung."
+            description="Sobald Verträge in den naechsten 90 Tagen auslaufen, erscheinen sie hier automatisch zur Bearbeitung."
           />
         ) : (
           <div className="overflow-x-auto rounded-lg border border-neutral-200">

@@ -47,7 +47,7 @@ export default async function ImportPage() {
             <li className="flex gap-2">
               <span className="text-brand-600">2.</span>
               <span>
-                Der Vertraege-Import braucht bestehende Kunden (Match per Name).
+                Der Verträge-Import braucht bestehende Kunden (Match per Name).
               </span>
             </li>
             <li className="flex gap-2">

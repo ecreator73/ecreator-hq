@@ -26,7 +26,7 @@ export default async function GrowthOrchestrationsPage() {
           <CardDescription>
             Regeln verknuepfen einen Trigger mit einer Aktion. Sie erzeugen
             ausschliesslich Vorschlaege - also Empfehlungen, Aufgaben oder
-            Alerts. Eine Regel versendet NIE ungefragt E-Mails, Vertraege oder
+            Alerts. Eine Regel versendet NIE ungefragt E-Mails, Verträge oder
             Rechnungen. Der Mensch bleibt jederzeit der Entscheider und gibt
             jede Aktion bewusst frei.
           </CardDescription>

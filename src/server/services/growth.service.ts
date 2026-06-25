@@ -295,7 +295,7 @@ export const renewalsService = {
     if (error) throw new ServiceError("Verlaengerungen konnten nicht geladen werden", error);
     return ((data ?? []) as unknown as Array<Record<string, unknown>>).map((r) => withClient<RenewalWithClient>(r));
   },
-  /** Vertraege mit Ende in <= 90 Tagen erfassen + bewerten. */
+  /** Verträge mit Ende in <= 90 Tagen erfassen + bewerten. */
   async scan(): Promise<number> {
     const { supabase } = await getContext();
     const today = new Date().toISOString().slice(0, 10);

@@ -19,7 +19,7 @@ export default async function OnboardingPage() {
       <PageHeader
         eyebrow="Clients"
         title="Onboarding"
-        description="Kunden im Onboarding - automatisch verknuepft mit Status, Vertraegen, Projekten und Aufgaben. Klicke auf einen Kunden fuer Checkliste und Details."
+        description="Kunden im Onboarding - automatisch verknuepft mit Status, Verträgen, Projekten und Aufgaben. Klicke auf einen Kunden fuer Checkliste und Details."
       />
       <ClientsOverviewTable
         clients={clients}

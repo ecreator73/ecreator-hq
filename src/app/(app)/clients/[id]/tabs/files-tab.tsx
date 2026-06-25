@@ -36,7 +36,7 @@ export function FilesTab({
         {files.length === 0 ? (
           <EmptyState
             title="Keine Dateien"
-            description="Verknuepfe Vertraege, Praesentationen, Reports oder Creatives."
+            description="Verknuepfe Verträge, Praesentationen, Reports oder Creatives."
           />
         ) : (
           <div className="space-y-5">

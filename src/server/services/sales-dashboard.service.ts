@@ -106,7 +106,7 @@ export const salesDashboardService = {
       .gte("meeting_date", `${today}T00:00:00`)
       .lte("meeting_date", `${today}T23:59:59`);
 
-    // Auslaufende Vertraege (90 Tage)
+    // Auslaufende Verträge (90 Tage)
     const { data: expiring } = await supabase.rpc("contracts_expiring", {
       within_days: 90,
     });
@@ -135,7 +135,7 @@ export const salesDashboardService = {
     const { data, error } = await supabase.rpc("contracts_expiring", {
       within_days: withinDays,
     });
-    if (error) throw new ServiceError("Vertraege konnten nicht geladen werden", error);
+    if (error) throw new ServiceError("Verträge konnten nicht geladen werden", error);
     return (data ?? []) as unknown as Contract[];
   },
 };

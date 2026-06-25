@@ -121,7 +121,7 @@ export default async function GrowthCommandCenterPage() {
                 href="/sales/proposals"
               />
               <KpiCard
-                label="Vertraege offen"
+                label="Verträge offen"
                 value={d.openContracts}
                 href="/sales/contracts"
               />

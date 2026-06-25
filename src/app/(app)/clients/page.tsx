@@ -144,7 +144,7 @@ export default async function ClientsDashboardPage() {
           tone={d.reportingThisWeek > 0 ? "amber" : "neutral"}
         />
         <Widget
-          label="Vertraege laufen aus"
+          label="Verträge laufen aus"
           value={d.contractsExpiring}
           href="/clients/list"
           tone={d.contractsExpiring > 0 ? "red" : "neutral"}

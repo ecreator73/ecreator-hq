@@ -25,7 +25,7 @@ export default async function FinanceCustomersPage() {
         {cv.length === 0 ? (
           <EmptyState
             title="Keine Kundendaten"
-            description="Sobald Kunden mit Vertraegen oder bezahlten Rechnungen erfasst sind, erscheint hier die Wertanalyse je Kunde."
+            description="Sobald Kunden mit Verträgen oder bezahlten Rechnungen erfasst sind, erscheint hier die Wertanalyse je Kunde."
           />
         ) : (
           <div className="overflow-x-auto rounded-lg border border-neutral-200">

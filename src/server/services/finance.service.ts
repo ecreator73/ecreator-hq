@@ -17,7 +17,7 @@ import type {
 
 /**
  * Finance-Engine: berechnet MRR/ARR, Umsatz, Forecast, Profitabilitaet,
- * Kundenwert, Alerts und Reports ZUR LAUFZEIT aus Vertraegen, Rechnungen und
+ * Kundenwert, Alerts und Reports ZUR LAUFZEIT aus Verträgen, Rechnungen und
  * Kosten (nichts wird zusaetzlich gespeichert). Kein Buchhaltungs-/MWST-Modul.
  */
 
@@ -266,7 +266,7 @@ export const financeService = {
     if (expiring > 0)
       alerts.push({
         type: "contract_expiring",
-        label: `${expiring} Vertrag/Vertraege laufen aus`,
+        label: `${expiring} Vertrag/Verträge laufen aus`,
         severity: "warn",
         href: "/finance/calendar",
       });

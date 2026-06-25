@@ -61,7 +61,7 @@ export default async function MonthlyFinancePage({
     <div className="space-y-5">
       <p className="text-sm text-neutral-500">
         Manuelle Monatszahlen: trage pro Monat alle Umsaetze und Kosten direkt
-        ein. Bewusst <strong>nicht</strong> an Rechnungen oder Vertraege
+        ein. Bewusst <strong>nicht</strong> an Rechnungen oder Verträge
         gekoppelt - reine Handerfassung.
       </p>
 

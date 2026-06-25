@@ -238,7 +238,7 @@ export default async function HomePage() {
           <StatCard value={String(sales?.hotLeads ?? 0)} label="Heisse Leads" href="/sales/leads" icon={Flame} />
           <StatCard value={formatCHF(sales?.pipelineValue ?? 0)} label="Pipeline-Wert" href="/sales/pipeline" icon={ArrowRight} />
           <StatCard value={String(sales?.openOffers ?? 0)} label="Offene Angebote" href="/sales/offers" icon={ArrowRight} />
-          <StatCard value={String(sales?.contractsExpiring ?? 0)} label="Vertraege laufen aus" href="/sales/contracts" icon={AlertTriangle} tone="danger" />
+          <StatCard value={String(sales?.contractsExpiring ?? 0)} label="Verträge laufen aus" href="/sales/contracts" icon={AlertTriangle} tone="danger" />
           <StatCard value={String(clientDash?.active ?? 0)} label="Aktive Kunden" href="/clients/list" icon={Users} />
         </div>
       </div>

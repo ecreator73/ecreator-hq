@@ -112,7 +112,7 @@ export default async function ExecutiveDashboardPage() {
             tone="amber"
           />
           <KpiCard
-            label="Vertraege laufen aus"
+            label="Verträge laufen aus"
             value={d.clients.contractsExpiring}
             tone="amber"
           />

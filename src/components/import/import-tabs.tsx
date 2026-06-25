@@ -7,14 +7,14 @@ import type { ImportKind } from "@/lib/import/specs";
 type Tab = { kind: ImportKind; label: string };
 
 /**
- * Tab-Hub fuer die CSV-Imports. Schaltet zwischen Kunden / Vertraegen /
+ * Tab-Hub fuer die CSV-Imports. Schaltet zwischen Kunden / Verträgen /
  * (optional) Finance um und rendert den passenden ImportWizard. Der `key`
  * setzt den Wizard bei jedem Tabwechsel auf Schritt 1 zurueck.
  */
 export function ImportTabs({ canFinance }: { canFinance: boolean }) {
   const tabs: Tab[] = [
     { kind: "customers", label: "Kunden" },
-    { kind: "contracts", label: "Vertraege" },
+    { kind: "contracts", label: "Verträge" },
     ...(canFinance ? [{ kind: "invoices" as ImportKind, label: "Finance" }] : []),
   ];
 

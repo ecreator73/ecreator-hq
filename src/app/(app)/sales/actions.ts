@@ -183,7 +183,7 @@ export async function deleteOfferAction(id: string): Promise<ActionResult> {
   }
 }
 
-/* ---- Vertraege ---- */
+/* ---- Verträge ---- */
 export async function createContractAction(
   input: ContractCreateInput,
 ): Promise<ActionResult<{ id: string }>> {
@@ -198,7 +198,7 @@ export async function createContractAction(
   }
 }
 
-/** Vertragsalerts: fuer auslaufende Vertraege Verlaengerungs-Aufgaben erzeugen. */
+/** Vertragsalerts: fuer auslaufende Verträge Verlaengerungs-Aufgaben erzeugen. */
 export async function createRenewalTasksAction(): Promise<
   ActionResult<{ created: number }>
 > {

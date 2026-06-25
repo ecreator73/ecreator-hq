@@ -641,7 +641,7 @@ export const ASSET_CATEGORIES = [
   { key: "images", label: "Bilder" },
   { key: "ads", label: "Anzeigen" },
   { key: "documents", label: "Dokumente" },
-  { key: "contracts", label: "Vertraege" },
+  { key: "contracts", label: "Verträge" },
   { key: "reports", label: "Reports" },
 ] as const;
 export const ASSET_CATEGORY_KEYS = ASSET_CATEGORIES.map((t) => t.key) as [
@@ -1737,7 +1737,7 @@ export const NEXT_BEST_ACTION_LABELS = labelMap(NEXT_BEST_ACTIONS);
 export const ASSISTANT_QUESTIONS = [
   { key: "leads_to_call", label: "Welche Leads sollte Fabian heute anrufen?" },
   { key: "upsell_clients", label: "Welche Kunden haben Upsell-Potenzial?" },
-  { key: "expiring_contracts", label: "Welche Vertraege laufen bald aus?" },
+  { key: "expiring_contracts", label: "Welche Verträge laufen bald aus?" },
   { key: "critical_projects", label: "Welche Projekte sind kritisch?" },
 ] as const;
 export const ASSISTANT_QUESTION_KEYS = ASSISTANT_QUESTIONS.map((t) => t.key) as [

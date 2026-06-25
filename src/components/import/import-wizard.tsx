@@ -30,7 +30,7 @@ const DEFAULT_OPTIONS: CustomerImportOptions = {
 
 /**
  * Mehrstufiger CSV-Import-Wizard (Hochladen -> Zuordnen -> Pruefen -> Import).
- * Generisch ueber den Import-Typ (Kunden/Vertraege/Rechnungen). Validierung
+ * Generisch ueber den Import-Typ (Kunden/Verträge/Rechnungen). Validierung
  * laeuft live im Browser; Dubletten/MRR-Vorschau (Kunden) kommen vom Server.
  */
 export function ImportWizard({ kind }: { kind: ImportKind }) {
@@ -347,7 +347,7 @@ export function ImportWizard({ kind }: { kind: ImportKind }) {
           <div className="flex flex-wrap gap-2 text-sm">
             {result.clientsCreated > 0 ? <Badge tone="green">{result.clientsCreated} Kunden</Badge> : null}
             {result.contractsCreated > 0 ? (
-              <Badge tone="green">{result.contractsCreated} Vertraege</Badge>
+              <Badge tone="green">{result.contractsCreated} Verträge</Badge>
             ) : null}
             {result.invoicesCreated > 0 ? (
               <Badge tone="green">{result.invoicesCreated} Rechnungen</Badge>

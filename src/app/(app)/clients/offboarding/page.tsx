@@ -20,7 +20,7 @@ export default async function OffboardingPage() {
       <PageHeader
         eyebrow="Clients"
         title="Offboarding"
-        description="Beendete und pausierte Kunden - mit verknuepften Vertraegen, Projekten und offenen Aufgaben fuer einen sauberen Abschluss."
+        description="Beendete und pausierte Kunden - mit verknuepften Verträgen, Projekten und offenen Aufgaben fuer einen sauberen Abschluss."
       />
       <ClientsOverviewTable
         clients={clients}

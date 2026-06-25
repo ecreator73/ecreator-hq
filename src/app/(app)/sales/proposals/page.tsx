@@ -85,7 +85,7 @@ export default async function ProposalsDashboardPage() {
     <div className="space-y-6">
       <PageHeader
         title="Proposal Engine"
-        description="Vom Lead zum unterschriebenen Vertrag: Vorschlaege generieren, als Offerte und Praesentation aufbereiten, Vertraege vorbereiten und in Rechnungen ueberfuehren."
+        description="Vom Lead zum unterschriebenen Vertrag: Vorschlaege generieren, als Offerte und Praesentation aufbereiten, Verträge vorbereiten und in Rechnungen ueberfuehren."
         actions={<ProposalGenerate />}
       />
 
@@ -115,7 +115,7 @@ export default async function ProposalsDashboardPage() {
           tone="green"
         />
         <Widget
-          label="Offene Vertraege"
+          label="Offene Verträge"
           value={d?.openContracts ?? 0}
           href="/sales/proposals/list?status=accepted"
         />

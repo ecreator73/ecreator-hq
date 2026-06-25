@@ -24,7 +24,7 @@ const CATEGORIES: {
   { key: "deadline", label: "Deadlines", dot: "bg-red-500", chip: "border-red-200 bg-red-50 text-red-700" },
   { key: "shoot", label: "Shootings", dot: "bg-orange-500", chip: "border-orange-200 bg-orange-50 text-orange-700" },
   { key: "launch", label: "Launches", dot: "bg-emerald-500", chip: "border-emerald-200 bg-emerald-50 text-emerald-700" },
-  { key: "contract", label: "Vertraege", dot: "bg-brand-500", chip: "border-brand-200 bg-brand-50 text-brand-700" },
+  { key: "contract", label: "Verträge", dot: "bg-brand-500", chip: "border-brand-200 bg-brand-50 text-brand-700" },
 ];
 const DOT: Record<CalendarCategory, string> = Object.fromEntries(
   CATEGORIES.map((c) => [c.key, c.dot]),

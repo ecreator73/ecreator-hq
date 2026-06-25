@@ -171,7 +171,7 @@ export default async function FinanceDashboardPage() {
             {al.length === 0 ? (
               <EmptyState
                 title="Keine Alerts"
-                description="Aktuell gibt es keine ueberfaelligen Rechnungen oder auslaufenden Vertraege."
+                description="Aktuell gibt es keine ueberfaelligen Rechnungen oder auslaufenden Verträge."
               />
             ) : (
               <div className="space-y-2">
@@ -198,7 +198,7 @@ export default async function FinanceDashboardPage() {
             {topClients.length === 0 ? (
               <EmptyState
                 title="Keine Kunden"
-                description="Sobald Vertraege oder bezahlte Rechnungen erfasst sind, erscheinen hier die wertvollsten Kunden."
+                description="Sobald Verträge oder bezahlte Rechnungen erfasst sind, erscheinen hier die wertvollsten Kunden."
               />
             ) : (
               <div className="overflow-hidden rounded-lg border border-neutral-200">

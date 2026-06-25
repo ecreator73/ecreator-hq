@@ -88,12 +88,12 @@ export const MAIN_NAV: NavItem[] = [
     href: "/sales",
     icon: TrendingUp,
     description:
-      "Verkauf: Angebote, Vertraege, Proposals, Outreach-Automatisierung und Termine bis zum Abschluss.",
+      "Verkauf: Angebote, Verträge, Proposals, Outreach-Automatisierung und Termine bis zum Abschluss.",
     roles: SALES_ROLES,
     children: [
       { label: "Dashboard", href: "/sales" },
       { label: "Angebote", href: "/sales/offers" },
-      { label: "Vertraege", href: "/sales/contracts" },
+      { label: "Verträge", href: "/sales/contracts" },
       { label: "Proposal Engine", href: "/sales/proposals" },
       { label: "Automatisierungen", href: "/sales/outreach" },
       { label: "E-Mail Vorlagen", href: "/sales/outreach/templates" },

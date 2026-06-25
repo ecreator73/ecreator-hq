@@ -49,7 +49,7 @@ const TABS = [
   { key: "activities", label: "Aktivitaeten" },
   { key: "tasks", label: "Aufgaben" },
   { key: "offers", label: "Angebote" },
-  { key: "contracts", label: "Vertraege" },
+  { key: "contracts", label: "Verträge" },
   { key: "files", label: "Dateien" },
 ] as const;
 type TabKey = (typeof TABS)[number]["key"];
@@ -218,8 +218,8 @@ export function LeadDetail({
             <OffersTab offers={offers} />
           ) : tab === "contracts" ? (
             <EmptyState
-              title="Keine Vertraege"
-              description="Vertraege entstehen nach Konvertierung des Leads zu einem Kunden oder nach Annahme eines Angebots."
+              title="Keine Verträge"
+              description="Verträge entstehen nach Konvertierung des Leads zu einem Kunden oder nach Annahme eines Angebots."
             />
           ) : (
             <EmptyState

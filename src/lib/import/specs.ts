@@ -73,7 +73,7 @@ export const CUSTOMER_IMPORT_FIELDS: ImportField[] = [
   },
 ];
 
-/** Vertraege zu bestehenden Kunden (Match per Kundenname). */
+/** Verträge zu bestehenden Kunden (Match per Kundenname). */
 export const CONTRACT_IMPORT_FIELDS: ImportField[] = [
   {
     key: "client_name",
@@ -140,8 +140,8 @@ export const IMPORT_SPECS: Record<ImportKind, ImportSpec> = {
   },
   contracts: {
     key: "contracts",
-    label: "Vertraege",
-    description: "Vertraege zu bestehenden Kunden importieren.",
+    label: "Verträge",
+    description: "Verträge zu bestehenden Kunden importieren.",
     fields: CONTRACT_IMPORT_FIELDS,
   },
   invoices: {

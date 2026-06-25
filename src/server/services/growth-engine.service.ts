@@ -54,7 +54,7 @@ import type {
  *
  * Uebergeordnete Orchestrierungsschicht. Verbindet alle Module zu einem Funnel
  * und schlaegt naechste beste Schritte vor. Die Engine erzeugt Aufgaben,
- * Erinnerungen und Alerts - sie versendet NIE ungefragt E-Mails, Vertraege
+ * Erinnerungen und Alerts - sie versendet NIE ungefragt E-Mails, Verträge
  * oder Rechnungen. Der Mensch bleibt Entscheider.
  * ======================================================================== */
 
@@ -88,7 +88,7 @@ async function headCount(
   return count ?? 0;
 }
 
-/** Summe des Verlaengerungswerts auslaufender Vertraege (<= 90 Tage), Rappen. */
+/** Summe des Verlaengerungswerts auslaufender Verträge (<= 90 Tage), Rappen. */
 async function expiringRenewalValue(): Promise<number> {
   const { supabase } = await getContext();
   const { data } = await supabase
@@ -557,7 +557,7 @@ export const growthEngineService = {
       sec("upsell", "Upsell-Chancen", upsells.map((u) => u.client?.name ?? "Kunde"), "/clients/growth/upsell"),
       sec(
         "renewals",
-        "Vertraege laufen aus",
+        "Verträge laufen aus",
         expContracts.map((c) => c.clientName ?? c.title),
         "/clients/growth/renewals",
       ),
@@ -585,7 +585,7 @@ export const growthEngineService = {
 
     const risks: string[] = [];
     if ((clientsDash?.contractsExpiring ?? 0) > 0)
-      risks.push(`${clientsDash?.contractsExpiring} Vertraege laufen bald aus.`);
+      risks.push(`${clientsDash?.contractsExpiring} Verträge laufen bald aus.`);
     if ((exec?.clients.churnRisk ?? 0) > 0)
       risks.push(`${exec?.clients.churnRisk} Kunden mit Churn-Risiko.`);
     if ((clientsDash?.noContact ?? 0) > 0)
@@ -671,15 +671,15 @@ export const growthEngineService = {
       };
     }
 
-    // Welche Vertraege laufen bald aus?
+    // Welche Verträge laufen bald aus?
     if (wants("vertrag", "vertraege", "renewal", "verlaeng", "laufen")) {
       const cs = await expiringContracts().catch(() => []);
       return {
         question: query,
         summary:
           cs.length > 0
-            ? `${cs.length} Vertraege laufen in den naechsten 90 Tagen aus.`
-            : "Keine Vertraege laufen in den naechsten 90 Tagen aus.",
+            ? `${cs.length} Verträge laufen in den naechsten 90 Tagen aus.`
+            : "Keine Verträge laufen in den naechsten 90 Tagen aus.",
         items: cs.map((c) => ({
           title: c.clientName ?? c.title,
           subtitle: c.title,
@@ -711,7 +711,7 @@ export const growthEngineService = {
     return {
       question: query,
       summary:
-        "Frage nicht erkannt. Nutze eine der Standardfragen (Leads anrufen, Upsell-Potenzial, auslaufende Vertraege, kritische Projekte).",
+        "Frage nicht erkannt. Nutze eine der Standardfragen (Leads anrufen, Upsell-Potenzial, auslaufende Verträge, kritische Projekte).",
       items: [],
     };
   },
@@ -727,7 +727,7 @@ function sec(
   return { key, label, count: items.length, items: items.slice(0, 5), href };
 }
 
-/** Auslaufende Vertraege (<= 90 Tage) mit Kundenname, fuer Briefing/Assistant. */
+/** Auslaufende Verträge (<= 90 Tage) mit Kundenname, fuer Briefing/Assistant. */
 async function expiringContracts(): Promise<
   { id: string; title: string; endDate: string | null; clientId: string | null; clientName: string | null }[]
 > {
