@@ -10,9 +10,10 @@ function scoreTone(score: number): string {
   return "bg-neutral-100 text-neutral-600 border-neutral-200";
 }
 
+const TERMINAL = ["abgeschlossen", "absage", "fehleintrag", "andere"];
 function overdue(lead: LeadWithRelations): boolean {
   if (!lead.next_action_date) return false;
-  if (lead.status?.key === "won" || lead.status?.key === "lost") return false;
+  if (TERMINAL.includes(lead.status?.key ?? "")) return false;
   return lead.next_action_date < new Date().toISOString().slice(0, 10);
 }
 

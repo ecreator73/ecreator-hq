@@ -5,16 +5,17 @@
  */
 
 const STAGE_SCORE: Record<string, number> = {
-  new: 10,
-  contacted: 25,
-  interested: 45,
-  meeting_booked: 60,
-  offer_created: 70,
-  offer_sent: 78,
-  negotiation: 88,
-  won: 100,
-  lost: 0,
-  paused: 20,
+  neu: 10,
+  nicht_erreicht: 18,
+  mehrfach_nicht_erreicht: 12,
+  followup: 35,
+  mail_gesendet: 45,
+  termin_gebucht: 65,
+  vertrag_mail: 85,
+  abgeschlossen: 100,
+  absage: 0,
+  fehleintrag: 0,
+  andere: 5,
 };
 
 const SIZE_BONUS: Record<string, number> = {
@@ -32,9 +33,9 @@ export interface LeadScoreInput {
 }
 
 export function computeLeadScore(input: LeadScoreInput): number {
-  const status = input.status ?? "new";
-  if (status === "won") return 100;
-  if (status === "lost") return 0;
+  const status = input.status ?? "neu";
+  if (status === "abgeschlossen") return 100;
+  if (status === "absage" || status === "fehleintrag") return 0;
 
   let score = STAGE_SCORE[status] ?? 10;
 

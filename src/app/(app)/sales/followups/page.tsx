@@ -103,10 +103,10 @@ export default async function SalesFollowupsPage() {
   const week = weekRange(0);
 
   const [overdue, due, next, thisWeek] = await Promise.all([
-    rows({ overdue: true, excludeStatus: ["won", "lost"] }),
-    rows({ dueFrom: t, dueTo: t, excludeStatus: ["won", "lost"] }),
-    rows({ dueFrom: tm, dueTo: tm, excludeStatus: ["won", "lost"] }),
-    rows({ dueFrom: week.from, dueTo: week.to, excludeStatus: ["won", "lost"] }),
+    rows({ overdue: true, excludeStatus: ["abgeschlossen", "absage", "fehleintrag", "andere"] }),
+    rows({ dueFrom: t, dueTo: t, excludeStatus: ["abgeschlossen", "absage", "fehleintrag", "andere"] }),
+    rows({ dueFrom: tm, dueTo: tm, excludeStatus: ["abgeschlossen", "absage", "fehleintrag", "andere"] }),
+    rows({ dueFrom: week.from, dueTo: week.to, excludeStatus: ["abgeschlossen", "absage", "fehleintrag", "andere"] }),
   ]);
 
   return (

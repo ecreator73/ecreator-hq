@@ -52,11 +52,14 @@ function mapLead(row: Record<string, unknown>): LeadWithRelations {
   } as LeadWithRelations;
 }
 
+/** Abschluss-Status ohne Follow-up-Pflicht. */
+const TERMINAL_LEAD_STATUSES = ["abgeschlossen", "absage", "fehleintrag", "andere"];
+
 function enforceFollowup(status: string, nextAction: unknown): void {
-  if (status === "won" || status === "lost") return;
+  if (TERMINAL_LEAD_STATUSES.includes(status)) return;
   if (!nextAction) {
     throw new ServiceError(
-      "Bitte ein naechstes Follow-up-Datum setzen (oder Status Gewonnen/Verloren).",
+      "Bitte ein naechstes Follow-up-Datum setzen (oder einen Abschluss-Status waehlen).",
     );
   }
 }
@@ -166,11 +169,7 @@ export const leadsService = {
       .from("leads")
       .select(LEAD_SELECT)
       .order("lead_score", { ascending: false });
-    query = await applyLeadFilters(
-      reg,
-      { ...filters, excludeStatus: ["paused", ...(filters.excludeStatus ?? [])] },
-      query,
-    );
+    query = await applyLeadFilters(reg, filters, query);
     query = query.limit(500);
     const { data, error } = await query;
     if (error) throw new ServiceError("Pipeline konnte nicht geladen werden", error);
@@ -194,7 +193,7 @@ export const leadsService = {
     const { supabase } = await getContext();
     const reg = await resolveLeadStatus(supabase);
 
-    const status = parsed.status ?? "new";
+    const status = parsed.status ?? "neu";
     enforceFollowup(status, parsed.next_action_date);
     const score = computeLeadScore({
       status,
@@ -231,7 +230,7 @@ export const leadsService = {
     const before = await this.getById(id);
     if (!before) throw new ServiceError("Lead nicht gefunden");
 
-    const effStatus = parsed.status ?? before.status?.key ?? "new";
+    const effStatus = parsed.status ?? before.status?.key ?? "neu";
     const effNext =
       parsed.next_action_date !== undefined
         ? parsed.next_action_date
@@ -289,7 +288,7 @@ export const leadsService = {
 
     const patch: Record<string, unknown> = { status_id: sid, updated_by: userId };
     let nextAction = before?.next_action_date ?? null;
-    if (statusKey !== "won" && statusKey !== "lost" && !nextAction) {
+    if (!TERMINAL_LEAD_STATUSES.includes(statusKey) && !nextAction) {
       nextAction = tomorrowISO();
       patch.next_action_date = nextAction;
     }
@@ -354,7 +353,7 @@ export const leadsService = {
       notes: lead.notes ?? undefined,
     });
 
-    await this.move(id, "won");
+    await this.move(id, "abgeschlossen");
     await logSalesActivity(
       supabase,
       id,

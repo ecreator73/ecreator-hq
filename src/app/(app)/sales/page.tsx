@@ -86,7 +86,7 @@ export default async function SalesDashboardPage() {
   try {
     heuteLeads = await leadsService
       .list(
-        { dueTo: today(), excludeStatus: ["won", "lost", "paused"] },
+        { dueTo: today(), excludeStatus: ["abgeschlossen", "absage", "fehleintrag", "andere"] },
         { pageSize: 8, sort: { column: "next_action_date", ascending: true } },
       )
       .then((r) => r.rows);

@@ -28,9 +28,10 @@ const SCORE_OPTIONS = [
 
 const today = () => new Date().toISOString().slice(0, 10);
 
+const TERMINAL_LEAD = ["abgeschlossen", "absage", "fehleintrag", "andere"];
 function isOverdue(lead: LeadWithRelations): boolean {
   if (!lead.next_action_date) return false;
-  if (lead.status?.key === "won" || lead.status?.key === "lost") return false;
+  if (TERMINAL_LEAD.includes(lead.status?.key ?? "")) return false;
   return lead.next_action_date < today();
 }
 

@@ -81,17 +81,20 @@ export const TASK_STATUSES = [
   { key: "archived", label: "Archiviert", color: "gray" },
 ] as const satisfies readonly CatalogEntry[];
 
+// Normalisierte Lead-Status (uebernommen aus dem alten CRM, siehe Import).
+// Der jeweilige Originalstatus wird zusaetzlich je Lead als legacy_status gespeichert.
 export const LEAD_STATUSES = [
-  { key: "new", label: "Neu", color: "gray", isDefault: true },
-  { key: "contacted", label: "Kontaktiert", color: "blue" },
-  { key: "interested", label: "Interesse", color: "blue" },
-  { key: "meeting_booked", label: "Termin gebucht", color: "blue" },
-  { key: "offer_created", label: "Angebot erstellt", color: "amber" },
-  { key: "offer_sent", label: "Angebot gesendet", color: "amber" },
-  { key: "negotiation", label: "Verhandlung", color: "amber" },
-  { key: "won", label: "Gewonnen", color: "green" },
-  { key: "lost", label: "Verloren", color: "red" },
-  { key: "paused", label: "Pausiert", color: "gray" },
+  { key: "neu", label: "Neu", color: "blue", isDefault: true },
+  { key: "nicht_erreicht", label: "Nicht erreicht", color: "amber" },
+  { key: "mehrfach_nicht_erreicht", label: "Mehrfach nicht erreicht", color: "amber" },
+  { key: "followup", label: "Follow-up", color: "blue" },
+  { key: "mail_gesendet", label: "Mail gesendet", color: "blue" },
+  { key: "termin_gebucht", label: "Termin gebucht", color: "blue" },
+  { key: "vertrag_mail", label: "Vertrag / Mail gemacht", color: "green" },
+  { key: "abgeschlossen", label: "Abgeschlossen", color: "green" },
+  { key: "absage", label: "Absage", color: "red" },
+  { key: "fehleintrag", label: "Fehleintrag", color: "gray" },
+  { key: "andere", label: "Andere", color: "gray" },
 ] as const satisfies readonly CatalogEntry[];
 
 export const MEETING_STATUSES = [
@@ -281,13 +284,10 @@ export const LEAD_STATUS_KEYS = keysOf(LEAD_STATUSES);
 export const MEETING_STATUS_KEYS = keysOf(MEETING_STATUSES);
 export const REPORTING_CALL_STATUS_KEYS = keysOf(REPORTING_CALL_STATUSES);
 
-/** Pipeline-Spalten (alle Lead-Status ausser "paused"). */
-export const LEAD_PIPELINE_KEYS = LEAD_STATUSES.filter(
-  (s) => s.key !== "paused",
-).map((s) => s.key) as Exclude<
-  (typeof LEAD_STATUS_KEYS)[number],
-  "paused"
->[];
+/** Pipeline-Spalten = alle Lead-Status (in Reihenfolge). */
+export const LEAD_PIPELINE_KEYS = LEAD_STATUSES.map(
+  (s) => s.key,
+) as (typeof LEAD_STATUS_KEYS)[number][];
 
 /** Spalten der Kanban-Ansicht (alle Task-Status ausser "archived"). */
 export const BOARD_STATUS_KEYS = TASK_STATUSES.filter(
