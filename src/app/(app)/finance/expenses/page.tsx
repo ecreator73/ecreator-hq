@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Table2 } from "lucide-react";
 import {
   Card,
   CardContent,
@@ -83,7 +84,16 @@ export default async function ExpensesPage({
         <p className="text-sm text-neutral-500">
           Betriebliche Ausgaben nach Kategorie - einmalig oder wiederkehrend.
         </p>
-        <ExpenseQuickCreate />
+        <div className="flex items-center gap-2">
+          <a
+            href="/finance/monthly"
+            className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-neutral-200 bg-white px-3 text-sm font-medium text-neutral-700 shadow-sm transition-colors hover:bg-neutral-50"
+          >
+            <Table2 className="h-4 w-4" />
+            Manuelle Monatsuebersicht
+          </a>
+          <ExpenseQuickCreate />
+        </div>
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2">

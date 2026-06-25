@@ -58,6 +58,8 @@ export type { InvoiceFilters } from "./invoices.service";
 export { expensesService } from "./expenses.service";
 export type { ExpenseFilters } from "./expenses.service";
 export { financeService } from "./finance.service";
+export { monthlyFinancialsService } from "./monthly-financials.service";
+export type { MonthOverviewRow } from "./monthly-financials.service";
 export { aiPromptsService } from "./prompt.service";
 export type { PromptFilters } from "./prompt.service";
 export { aiRunsService } from "./ai.service";

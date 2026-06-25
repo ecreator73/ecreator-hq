@@ -6,9 +6,14 @@ import {
   invoicesService,
   expensesService,
   clientsService,
+  monthlyFinancialsService,
 } from "@/server/services";
 import type { InvoiceCreateInput, InvoiceUpdateInput } from "@/lib/validation/invoices";
 import type { ExpenseCreateInput, ExpenseUpdateInput } from "@/lib/validation/expenses";
+import type {
+  MonthlyEntryCreateInput,
+  MonthlyEntryUpdateInput,
+} from "@/lib/validation/monthly-financials";
 
 const FINANCE_ROLES = ["super_admin", "ceo", "finance"] as const;
 
@@ -106,6 +111,58 @@ export async function deleteExpenseAction(id: string): Promise<ActionResult> {
     await expensesService.remove(id);
     revalidateFinance();
     return { ok: true };
+  } catch (e) {
+    return fail(e);
+  }
+}
+
+/* ---- Monatsuebersicht (manuelle Monatsfinanzen) ---- */
+export async function createMonthlyEntryAction(
+  input: MonthlyEntryCreateInput,
+): Promise<ActionResult<{ id: string }>> {
+  try {
+    await requireRole([...FINANCE_ROLES]);
+    const row = await monthlyFinancialsService.create(input);
+    revalidateFinance();
+    return { ok: true, data: { id: row.id } };
+  } catch (e) {
+    return fail(e);
+  }
+}
+export async function updateMonthlyEntryAction(
+  id: string,
+  input: MonthlyEntryUpdateInput,
+): Promise<ActionResult> {
+  try {
+    await requireRole([...FINANCE_ROLES]);
+    await monthlyFinancialsService.update(id, input);
+    revalidateFinance();
+    return { ok: true };
+  } catch (e) {
+    return fail(e);
+  }
+}
+export async function deleteMonthlyEntryAction(
+  id: string,
+): Promise<ActionResult> {
+  try {
+    await requireRole([...FINANCE_ROLES]);
+    await monthlyFinancialsService.remove(id);
+    revalidateFinance();
+    return { ok: true };
+  } catch (e) {
+    return fail(e);
+  }
+}
+export async function copyPreviousMonthAction(
+  fromMonth: string,
+  toMonth: string,
+): Promise<ActionResult<{ copied: number }>> {
+  try {
+    await requireRole([...FINANCE_ROLES]);
+    const res = await monthlyFinancialsService.copyFromMonth(fromMonth, toMonth);
+    revalidateFinance();
+    return { ok: true, data: res };
   } catch (e) {
     return fail(e);
   }

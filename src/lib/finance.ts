@@ -10,6 +10,26 @@ export function isoDay(d: Date): string {
   return d.toISOString().slice(0, 10);
 }
 
+/**
+ * Wandelt eine CHF-Eingabe ("1'234.50", "1234,50", "1234") in Rappen (Ganzzahl)
+ * um. Ungueltige/leere Eingaben ergeben 0.
+ */
+export function parseChfToRappen(input: string): number {
+  const cleaned = input
+    .replace(/['\s]/g, "")
+    .replace(/,/g, ".")
+    .replace(/[^0-9.]/g, "");
+  const value = Number.parseFloat(cleaned);
+  if (!Number.isFinite(value) || value < 0) return 0;
+  return Math.round(value * 100);
+}
+
+/** Rappen als reine Zahl ohne Waehrungssymbol fuer Eingabefelder ("1234.50"). */
+export function rappenToInput(rappen: number): string {
+  if (!rappen) return "";
+  return (rappen / 100).toFixed(2).replace(/\.00$/, "");
+}
+
 export function monthKey(d: Date): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
 }

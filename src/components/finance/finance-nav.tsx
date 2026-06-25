@@ -9,6 +9,7 @@ const TABS = [
   { label: "Rechnungen", href: "/finance/invoices" },
   { label: "Offen", href: "/finance/open" },
   { label: "Kosten", href: "/finance/expenses" },
+  { label: "Monatsuebersicht", href: "/finance/monthly" },
   { label: "Forecast", href: "/finance/forecast" },
   { label: "Kunden", href: "/finance/customers" },
   { label: "Reports", href: "/finance/reports" },

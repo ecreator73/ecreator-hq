@@ -729,6 +729,19 @@ export interface Expense extends AuditedEntity {
   notes: string | null;
 }
 
+/** Manuelle Monatsfinanzen: ein Umsatz- oder Kostenposten in einem Monat. */
+export interface MonthlyEntry extends AuditedEntity {
+  /** Erster Tag des Monats (YYYY-MM-01). */
+  month: string;
+  kind: "revenue" | "cost";
+  label: string;
+  /** Betrag in Rappen. */
+  amount: number;
+  category: string | null;
+  note: string | null;
+  sort_order: number;
+}
+
 /** Finance-Dashboard-Kennzahlen (alle Geldwerte in Rappen). */
 export interface FinanceSummary {
   monthRevenue: number;
