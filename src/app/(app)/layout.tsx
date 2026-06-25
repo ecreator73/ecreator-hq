@@ -22,6 +22,7 @@ export default async function AppLayout({
           email: user.email,
           roles: user.roles,
           primaryRole: user.primaryRole,
+          avatarUrl: user.avatarUrl,
         }}
       >
         {children}

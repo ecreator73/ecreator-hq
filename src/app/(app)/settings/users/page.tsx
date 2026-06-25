@@ -14,6 +14,7 @@ interface ProfileRow {
   full_name: string | null;
   email: string | null;
   is_active: boolean | null;
+  avatar_url: string | null;
   user_roles: Array<{ roles: { key: string } | null }> | null;
 }
 
@@ -31,7 +32,7 @@ export default async function SettingsUsersPage() {
     const { data, error } = await supabase
       .from("profiles")
       .select(
-        "id, full_name, email, is_active, user_roles!user_roles_user_id_fkey(roles(key))",
+        "id, full_name, email, is_active, avatar_url, user_roles!user_roles_user_id_fkey(roles(key))",
       )
       .order("full_name", { ascending: true });
     if (error) loadError = true;
@@ -43,6 +44,7 @@ export default async function SettingsUsersPage() {
     full_name: row.full_name,
     email: row.email,
     is_active: row.is_active !== false,
+    avatar_url: row.avatar_url,
     roleKeys: (row.user_roles ?? [])
       .map((ur) => ur.roles?.key)
       .filter((k): k is string => Boolean(k)),

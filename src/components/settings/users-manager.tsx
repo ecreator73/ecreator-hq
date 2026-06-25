@@ -19,6 +19,7 @@ export interface ManagedUser {
   full_name: string | null;
   email: string | null;
   is_active: boolean;
+  avatar_url: string | null;
   roleKeys: string[];
 }
 
@@ -118,7 +119,7 @@ export function UsersManager({
                 <tr key={u.id}>
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-2.5">
-                      <Avatar name={name} />
+                      <Avatar name={name} src={u.avatar_url} />
                       <span className="font-medium text-neutral-900">{name}</span>
                     </div>
                   </td>

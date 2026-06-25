@@ -15,6 +15,7 @@ interface ShellUser {
   email: string;
   roles: RoleKey[];
   primaryRole: RoleKey;
+  avatarUrl?: string | null;
 }
 
 export function AppShell({
@@ -109,6 +110,7 @@ export function AppShell({
                 fullName={user.fullName}
                 email={user.email}
                 primaryRole={user.primaryRole}
+                avatarUrl={user.avatarUrl}
               />
             </div>
           </header>

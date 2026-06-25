@@ -12,10 +12,12 @@ export function UserMenu({
   fullName,
   email,
   primaryRole,
+  avatarUrl,
 }: {
   fullName: string;
   email: string;
   primaryRole: string;
+  avatarUrl?: string | null;
 }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -47,7 +49,7 @@ export function UserMenu({
         aria-expanded={open}
         className="flex items-center gap-2 rounded-lg p-1 pr-2 text-left transition-colors hover:bg-neutral-100"
       >
-        <Avatar name={fullName} />
+        <Avatar name={fullName} src={avatarUrl} />
         <span className="hidden min-w-0 flex-col sm:flex">
           <span className="truncate text-sm font-medium text-neutral-900">
             {fullName}
