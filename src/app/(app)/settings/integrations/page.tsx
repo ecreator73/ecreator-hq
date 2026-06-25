@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { requireRole } from "@/lib/auth";
@@ -18,9 +19,30 @@ const PLANNED = [
 export default async function SettingsIntegrationsPage() {
   await requireRole(SETTINGS_BASE_ROLES);
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Integrationen</CardTitle>
+    <div className="space-y-6">
+      <Card>
+        <CardHeader>
+          <CardTitle>Aktive Integrationen</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Link
+            href="/settings/integrations/meta"
+            className="flex items-center justify-between rounded-lg border border-neutral-200 px-4 py-3 transition-colors hover:border-brand-300 hover:bg-neutral-50"
+          >
+            <span className="text-sm font-medium text-neutral-900">
+              Meta (Facebook Lead Ads)
+              <span className="ml-2 font-normal text-neutral-500">
+                Lead Ads in Echtzeit ins CRM
+              </span>
+            </span>
+            <Badge tone="brand">Einrichten</Badge>
+          </Link>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Weitere (geplant)</CardTitle>
         <p className="mt-1 text-sm text-neutral-500">
           Verbundene Drittsysteme. Werden in spaeteren Phasen schrittweise
           aktiviert - die Struktur ist vorbereitet.
@@ -39,6 +61,7 @@ export default async function SettingsIntegrationsPage() {
           ))}
         </ul>
       </CardContent>
-    </Card>
+      </Card>
+    </div>
   );
 }

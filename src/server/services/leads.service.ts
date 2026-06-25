@@ -15,6 +15,8 @@ const LEAD_SELECT = `
   company_size, city, country, source, lead_score, estimated_value, currency,
   status_id, owner_id, notes, next_action_date, created_by, updated_by,
   deleted_at, created_at, updated_at,
+  legacy_status, campaign_name, dienstleistung, assigned_to_name, assigned_to_email,
+  external_lead_id, form_id, form_name, ad_id, ad_name, adset_id, adset_name, campaign_id,
   status:statuses!leads_status_id_fkey(key,label,color),
   owner:profiles!leads_owner_id_fkey(id,full_name)
 `;

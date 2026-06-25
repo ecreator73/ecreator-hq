@@ -22,3 +22,7 @@ create unique index if not exists leads_legacy_id_key
 create index if not exists leads_campaign_idx on public.leads (campaign_name);
 create index if not exists leads_source_idx   on public.leads (source);
 create index if not exists leads_dienst_idx   on public.leads (dienstleistung);
+
+-- BUGFIX: validate_status('lead') liest NEW.status, aber leads nutzt status_id
+-- (FK validiert den Status bereits). Der Trigger blockiert jeden Insert -> entfernen.
+drop trigger if exists validate_status on public.leads;

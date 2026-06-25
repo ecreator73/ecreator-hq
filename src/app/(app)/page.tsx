@@ -20,6 +20,7 @@ import {
   financeService,
   calendarService,
 } from "@/server/services";
+import { metaService } from "@/server/integrations/meta/service";
 import { TaskList } from "@/components/tasks/task-list";
 import { QuickCreate } from "@/components/tasks/quick-create";
 import { LeadQuickCreate } from "@/components/sales/lead-quick-create";
@@ -160,6 +161,17 @@ export default async function HomePage() {
     prod = null;
   }
 
+  // Meta Lead Ads - nur fuer Sales/Leitung, nur wenn schon Leads eingegangen sind.
+  const showSales = canAccess(user.roles, ["super_admin", "ceo", "cso", "sales"]);
+  let metaStats: { today: number; week: number; topCampaigns: Array<{ name: string; count: number }> } | null = null;
+  if (showSales) {
+    try {
+      metaStats = await metaService.dashboardStats();
+    } catch {
+      metaStats = null;
+    }
+  }
+
   const showFinance = canAccess(user.roles, [...FINANCE_ROLES]);
   let finance: FinanceSummary | null = null;
   if (showFinance) {
@@ -242,6 +254,34 @@ export default async function HomePage() {
           <StatCard value={String(clientDash?.active ?? 0)} label="Aktive Kunden" href="/clients/list" icon={Users} />
         </div>
       </div>
+
+      {/* Meta Lead Ads (nur wenn Leads vorhanden) */}
+      {metaStats && metaStats.week > 0 ? (
+        <div>
+          <h2 className="mb-3 text-sm font-semibold text-neutral-700">Meta Lead Ads</h2>
+          <div className="grid gap-4 lg:grid-cols-3">
+            <StatCard value={metaStats.today} label="Neue Meta Leads heute" href="/sales/leads" icon={Flame} />
+            <StatCard value={metaStats.week} label="Neue Meta Leads (7 Tage)" href="/sales/leads" icon={ArrowRight} />
+            <Card className="h-full">
+              <CardHeader><CardTitle className="text-sm">Top Kampagnen</CardTitle></CardHeader>
+              <CardContent>
+                {metaStats.topCampaigns.length === 0 ? (
+                  <p className="py-2 text-center text-sm text-neutral-400">Keine Kampagnendaten.</p>
+                ) : (
+                  <ul className="divide-y divide-neutral-100">
+                    {metaStats.topCampaigns.map((c) => (
+                      <li key={c.name} className="flex items-center justify-between py-1.5 text-sm">
+                        <span className="min-w-0 truncate text-neutral-700">{c.name}</span>
+                        <span className="shrink-0 font-semibold tabular-nums text-neutral-900">{c.count}</span>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      ) : null}
 
       {/* Production */}
       <div>

@@ -54,6 +54,18 @@ const TABS = [
 ] as const;
 type TabKey = (typeof TABS)[number]["key"];
 
+const SOURCE_LABELS: Record<string, string> = {
+  meta_ads: "Meta Ads",
+  tiktok_ads: "TikTok Ads",
+  google_ads: "Google Ads",
+  linkedin_ads: "LinkedIn Ads",
+  manual: "Manuell",
+  vermittlung: "Vermittlung",
+  lohnrechner: "Lohnrechner",
+};
+const sourceLabel = (s: string | null | undefined): string =>
+  s ? SOURCE_LABELS[s] ?? s : "-";
+
 const selectClass =
   "h-9 rounded-lg border border-neutral-300 bg-white px-2.5 text-sm font-medium focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-100";
 
@@ -294,8 +306,34 @@ function OverviewTab({
   lead: LeadWithRelations;
   meetings: Meeting[];
 }) {
+  const herkunft: Array<[string, string | null | undefined, boolean?]> = [
+    ["Quelle", sourceLabel(lead.source)],
+    ["Originalstatus (altes CRM)", lead.legacy_status],
+    ["Kampagne", lead.campaign_name],
+    ["Formular", lead.form_name ?? lead.form_id],
+    ["Anzeige", lead.ad_name],
+    ["Adset", lead.adset_name],
+    ["Facebook Lead ID", lead.external_lead_id, true],
+    ["Dienstleistung", lead.dienstleistung],
+    ["Zuständig (Alt-CRM)", lead.assigned_to_name],
+  ];
+  const herkunftRows = herkunft.filter(([, v]) => v && v !== "-");
+
   return (
     <div className="space-y-6">
+      {herkunftRows.length > 0 ? (
+        <div className="rounded-xl border border-neutral-200 bg-neutral-50/60 p-4">
+          <h3 className="mb-3 text-sm font-semibold text-neutral-900">Herkunft &amp; Quelle</h3>
+          <dl className="grid gap-3 text-sm sm:grid-cols-2 lg:grid-cols-3">
+            {herkunftRows.map(([label, value, mono]) => (
+              <div key={label}>
+                <dt className="text-xs uppercase tracking-wide text-neutral-400">{label}</dt>
+                <dd className={mono ? "mt-0.5 break-all font-mono text-xs text-neutral-700" : "mt-0.5 break-words font-medium text-neutral-800"}>{value}</dd>
+              </div>
+            ))}
+          </dl>
+        </div>
+      ) : null}
       <dl className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <Field label="Firma">{lead.company_name}</Field>
         <Field label="Ansprechpartner">{lead.contact_name ?? "-"}</Field>
