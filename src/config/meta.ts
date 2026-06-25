@@ -5,14 +5,17 @@
 export const META_GRAPH_VERSION = process.env.META_GRAPH_VERSION || "v21.0";
 export const META_GRAPH = `https://graph.facebook.com/${META_GRAPH_VERSION}`;
 
-/** OAuth-Scopes fuer Lead-Ads (App-Review erforderlich fuer Produktivbetrieb). */
+/**
+ * OAuth-Scopes - minimal fuer Lead-Ads (Seiten listen, Webhook abonnieren,
+ * Leads abrufen). Bewusst OHNE business_management/ads_read: nicht noetig und
+ * haeufige Ursache fuer "ungueltige Berechtigungen" bei neuen Apps.
+ * App-Review erforderlich fuer Produktivbetrieb mit echten Kundenleads.
+ */
 export const META_SCOPES = [
   "pages_show_list",
   "pages_read_engagement",
   "pages_manage_metadata",
   "leads_retrieval",
-  "ads_read",
-  "business_management",
 ].join(",");
 
 export interface MetaEnv {
