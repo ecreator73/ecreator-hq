@@ -105,6 +105,13 @@ export function UsersManager({
             </tr>
           </thead>
           <tbody className="divide-y divide-neutral-100">
+            {users.length === 0 ? (
+              <tr>
+                <td colSpan={canManage ? 5 : 4} className="px-4 py-8 text-center text-sm text-neutral-400">
+                  Noch keine Benutzer{canManage ? " – lege oben den ersten an." : "."}
+                </td>
+              </tr>
+            ) : null}
             {users.map((u) => {
               const name = u.full_name ?? u.email ?? "Unbenannt";
               return (

@@ -26,9 +26,13 @@ export default async function SettingsUsersPage() {
 
   if (isSupabaseConfigured()) {
     const supabase = await createClient();
+    // user_roles hat ZWEI FKs auf profiles (user_id + assigned_by) -> der
+    // Embed muss den FK explizit nennen, sonst PGRST201 (mehrdeutige Relation).
     const { data, error } = await supabase
       .from("profiles")
-      .select("id, full_name, email, is_active, user_roles(roles(key))")
+      .select(
+        "id, full_name, email, is_active, user_roles!user_roles_user_id_fkey(roles(key))",
+      )
       .order("full_name", { ascending: true });
     if (error) loadError = true;
     rows = (data as unknown as ProfileRow[] | null) ?? [];
@@ -60,16 +64,14 @@ export default async function SettingsUsersPage() {
             title="Keine Datenbank verbunden"
             description="Im Demo-Modus sind keine Benutzerdaten verfügbar."
           />
-        ) : users.length === 0 ? (
+        ) : loadError ? (
           <EmptyState
-            title="Keine Benutzer vorhanden"
-            description={
-              loadError
-                ? "Die Benutzer konnten nicht geladen werden. Prüfe das Datenbank-Schema."
-                : "Lege den ersten Benutzer an."
-            }
+            title="Benutzer konnten nicht geladen werden"
+            description="Die Benutzerliste konnte nicht aus der Datenbank gelesen werden. Bitte später erneut versuchen."
           />
         ) : (
+          // Auch bei leerer Liste rendern -> der Manager zeigt super_admins den
+          // "Benutzer anlegen"-Button (sonst liesse sich kein erster Nutzer anlegen).
           <UsersManager users={users} canManage={canManage} currentUserId={user.id} />
         )}
       </CardContent>
