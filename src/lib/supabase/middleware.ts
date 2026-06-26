@@ -6,8 +6,12 @@ import {
   isSupabaseConfigured,
 } from "@/lib/supabase/config";
 
-/** Oeffentliche Pfade, die ohne Login erreichbar sind. */
-const PUBLIC_PATHS = ["/login"];
+/**
+ * Oeffentliche Pfade ohne Login. Eingehende Webhooks (z.B. Meta Lead Ads)
+ * werden von externen Servern OHNE Session aufgerufen und duerfen daher nicht
+ * auf /login umgeleitet werden.
+ */
+const PUBLIC_PATHS = ["/login", "/api/webhooks"];
 
 function isPublicPath(pathname: string): boolean {
   return PUBLIC_PATHS.some(
