@@ -11,11 +11,13 @@ export const META_GRAPH = `https://graph.facebook.com/${META_GRAPH_VERSION}`;
  * haeufige Ursache fuer "ungueltige Berechtigungen" bei neuen Apps.
  * App-Review erforderlich fuer Produktivbetrieb mit echten Kundenleads.
  */
+// TEILERFOLG-Modus: nur valide Standard-Scopes, damit das Verbinden sofort
+// klappt (ohne leads_retrieval/pages_manage_metadata, die Business-Verification
+// brauchen). Sobald leads_retrieval freigeschaltet ist, wieder ergaenzen:
+//   "pages_manage_metadata", "leads_retrieval"
 export const META_SCOPES = [
   "pages_show_list",
   "pages_read_engagement",
-  "pages_manage_metadata",
-  "leads_retrieval",
 ].join(",");
 
 export interface MetaEnv {
