@@ -50,31 +50,22 @@ export default async function SalesLeadsPage({
     page,
     pageSize: 50,
   };
-  let diag = "";
   try {
     result = await leadsService.list(filters, { page, sort });
-    diag = `ok · total=${result.total} · rows=${result.rows.length}`;
-  } catch (e) {
-    diag = "FEHLER: " + (e instanceof Error ? e.message : String(e));
+  } catch {
+    // Demo-Modus / keine DB -> leere Tabelle
   }
 
   const optRes = await salesFormOptionsAction();
   const users = optRes.ok && optRes.data ? optRes.data.users : [];
 
   return (
-    <>
-      {result.total === 0 ? (
-        <p className="mb-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
-          Diagnose: {diag}
-        </p>
-      ) : null}
-      <LeadsTable
-        rows={result.rows}
-        total={result.total}
-        page={result.page}
-        pageSize={result.pageSize}
-        options={{ users }}
-      />
-    </>
+    <LeadsTable
+      rows={result.rows}
+      total={result.total}
+      page={result.page}
+      pageSize={result.pageSize}
+      options={{ users }}
+    />
   );
 }

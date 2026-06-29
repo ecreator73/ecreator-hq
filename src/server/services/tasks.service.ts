@@ -180,7 +180,9 @@ async function applyFilters(
     q = q.or(ors.join(","));
   }
 
-  return q;
+  // Builder in ein Objekt verpacken: ein direkt zurueckgegebener (thenable)
+  // Builder wuerde von der async-Funktion vorzeitig ausgefuehrt -> .range() faellt weg.
+  return { query: q };
 }
 
 export const tasksService = {
@@ -199,7 +201,7 @@ export const tasksService = {
       .from("tasks")
       .select(TASK_SELECT, { count: "exact" })
       .order(sort.column, { ascending: sort.ascending ?? false });
-    query = await applyFilters(supabase, reg, filters, query);
+    query = (await applyFilters(supabase, reg, filters, query)).query;
     query = query.range((page - 1) * pageSize, page * pageSize - 1);
 
     const { data, error, count } = await query;
@@ -220,12 +222,14 @@ export const tasksService = {
       .from("tasks")
       .select(TASK_SELECT)
       .order("position", { ascending: true });
-    query = await applyFilters(
-      supabase,
-      reg,
-      { ...filters, excludeStatus: ["archived", ...(filters.excludeStatus ?? [])] },
-      query,
-    );
+    query = (
+      await applyFilters(
+        supabase,
+        reg,
+        { ...filters, excludeStatus: ["archived", ...(filters.excludeStatus ?? [])] },
+        query,
+      )
+    ).query;
     query = query.limit(500);
     const { data, error } = await query;
     if (error) throw new ServiceError("Board konnte nicht geladen werden", error);

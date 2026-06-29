@@ -102,7 +102,10 @@ export interface LeadListResult {
   pageSize: number;
 }
 
-async function applyLeadFilters(
+// NICHT async: der Supabase-Builder ist "thenable" - eine async-Funktion wuerde
+// ihn beim Return sofort ausfuehren (statt den Builder zurueckzugeben), wodurch
+// nachfolgende .range()/.order() fehlschlagen ("range is not a function").
+function applyLeadFilters(
   reg: Map<string, string>,
   filters: LeadFilters,
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -152,7 +155,7 @@ export const leadsService = {
       .from("leads")
       .select(LEAD_SELECT, { count: "exact" })
       .order(sort.column, { ascending: sort.ascending ?? false });
-    query = await applyLeadFilters(reg, filters, query);
+    query = applyLeadFilters(reg, filters, query);
     query = query.range((page - 1) * pageSize, page * pageSize - 1);
     const { data, error, count } = await query;
     if (error) throw new ServiceError("Leads konnten nicht geladen werden", error);
@@ -171,7 +174,7 @@ export const leadsService = {
       .from("leads")
       .select(LEAD_SELECT)
       .order("lead_score", { ascending: false });
-    query = await applyLeadFilters(reg, filters, query);
+    query = applyLeadFilters(reg, filters, query);
     query = query.limit(500);
     const { data, error } = await query;
     if (error) throw new ServiceError("Pipeline konnte nicht geladen werden", error);
