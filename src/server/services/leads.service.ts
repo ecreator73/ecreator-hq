@@ -241,7 +241,9 @@ export const leadsService = {
       parsed.next_action_date !== undefined
         ? parsed.next_action_date
         : before.next_action_date;
-    enforceFollowup(effStatus, effNext);
+    // Follow-up-Pflicht nur beim Statuswechsel erzwingen, nicht bei reinen
+    // Feld-Edits (Inline-Editing in der Lead-Detailansicht).
+    if (parsed.status !== undefined) enforceFollowup(effStatus, effNext);
     const effValue =
       parsed.estimated_value !== undefined ? parsed.estimated_value : before.estimated_value;
     const effSize =
