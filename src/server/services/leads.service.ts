@@ -17,6 +17,7 @@ const LEAD_SELECT = `
   deleted_at, created_at, updated_at,
   legacy_status, campaign_name, dienstleistung, assigned_to_name, assigned_to_email,
   external_lead_id, form_id, form_name, ad_id, ad_name, adset_id, adset_name, campaign_id,
+  metadata_json,
   status:statuses!leads_status_id_fkey(key,label,color),
   owner:profiles!leads_owner_id_fkey(id,full_name)
 `;

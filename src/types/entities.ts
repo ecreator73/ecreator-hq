@@ -180,6 +180,8 @@ export interface Lead extends AuditedEntity {
   adset_id?: string | null;
   adset_name?: string | null;
   campaign_id?: string | null;
+  /** Vollstaendige Rohdaten/Formularfelder (alter CRM-Import bzw. Meta Lead Ads). */
+  metadata_json?: Record<string, unknown> | null;
 }
 
 export interface LeadWithRelations extends Lead {

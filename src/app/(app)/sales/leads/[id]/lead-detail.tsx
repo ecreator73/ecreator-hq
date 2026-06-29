@@ -66,6 +66,64 @@ const SOURCE_LABELS: Record<string, string> = {
 const sourceLabel = (s: string | null | undefined): string =>
   s ? SOURCE_LABELS[s] ?? s : "-";
 
+// Deutsche Labels fuer die erfassten Formular-/Rohdaten-Felder.
+const META_FIELD_LABELS: Record<string, string> = {
+  situation: "Situation",
+  zeitaufwand: "Zeitaufwand",
+  pflegemassnahmen: "Pflegemassnahmen",
+  nachricht: "Nachricht",
+  message: "Nachricht",
+  city: "Stadt",
+  kanton: "Kanton",
+  zip_code: "PLZ",
+  street: "Strasse",
+  birthdate: "Geburtsdatum",
+  received_at: "Eingegangen am",
+  form_name: "Formular",
+  ad_name: "Anzeige",
+  campaign_name: "Kampagne",
+  dienstleistung: "Dienstleistung",
+  company: "Firma",
+  phone_number: "Telefon",
+  phone: "Telefon",
+  email: "E-Mail",
+  work_email: "Geschaeftliche E-Mail",
+  name: "Name",
+  full_name: "Name",
+  first_name: "Vorname",
+  last_name: "Nachname",
+  platform: "Plattform",
+};
+// Schluessel, die hier NICHT noch einmal erscheinen sollen (anderswo gezeigt / Rauschen).
+const META_SKIP = new Set(["provider", "id", "org_id", "status", "source"]);
+
+const prettyMetaLabel = (k: string): string =>
+  META_FIELD_LABELS[k] ??
+  k.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+
+/** Flacht metadata_json (inkl. raw_data/raw/fields) zu Label/Wert-Paaren ab. */
+function collectFormFields(
+  meta: Record<string, unknown> | null | undefined,
+): Array<[string, string]> {
+  if (!meta || typeof meta !== "object") return [];
+  const out = new Map<string, string>();
+  const add = (k: string, v: unknown) => {
+    if (v == null || typeof v === "object") return;
+    const s = String(v).trim();
+    if (!s || s.toLowerCase() === "null" || META_SKIP.has(k)) return;
+    if (!out.has(k)) out.set(k, s);
+  };
+  const walk = (obj: unknown) => {
+    if (!obj || typeof obj !== "object") return;
+    for (const [k, v] of Object.entries(obj as Record<string, unknown>)) {
+      if (v && typeof v === "object") walk(v);
+      else add(k, v);
+    }
+  };
+  walk(meta);
+  return [...out.entries()].map(([k, v]) => [prettyMetaLabel(k), v]);
+}
+
 const selectClass =
   "h-9 rounded-lg border border-neutral-300 bg-white px-2.5 text-sm font-medium focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-100";
 
@@ -318,6 +376,7 @@ function OverviewTab({
     ["Zuständig (Alt-CRM)", lead.assigned_to_name],
   ];
   const herkunftRows = herkunft.filter(([, v]) => v && v !== "-");
+  const formFields = collectFormFields(lead.metadata_json);
 
   return (
     <div className="space-y-6">
@@ -329,6 +388,23 @@ function OverviewTab({
               <div key={label}>
                 <dt className="text-xs uppercase tracking-wide text-neutral-400">{label}</dt>
                 <dd className={mono ? "mt-0.5 break-all font-mono text-xs text-neutral-700" : "mt-0.5 break-words font-medium text-neutral-800"}>{value}</dd>
+              </div>
+            ))}
+          </dl>
+        </div>
+      ) : null}
+      {formFields.length > 0 ? (
+        <div className="rounded-xl border border-neutral-200 bg-white p-4">
+          <h3 className="mb-3 text-sm font-semibold text-neutral-900">
+            Formulardaten &amp; alle erfassten Angaben
+          </h3>
+          <dl className="grid gap-4 text-sm sm:grid-cols-2">
+            {formFields.map(([label, value]) => (
+              <div key={label}>
+                <dt className="text-xs uppercase tracking-wide text-neutral-400">{label}</dt>
+                <dd className="mt-0.5 whitespace-pre-wrap break-words font-medium text-neutral-800">
+                  {value}
+                </dd>
               </div>
             ))}
           </dl>

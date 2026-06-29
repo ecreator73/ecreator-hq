@@ -29,6 +29,17 @@ const SCORE_OPTIONS = [
 const today = () => new Date().toISOString().slice(0, 10);
 
 const TERMINAL_LEAD = ["abgeschlossen", "absage", "fehleintrag", "andere"];
+
+const SRC_LABELS: Record<string, string> = {
+  meta_ads: "Meta Ads",
+  tiktok_ads: "TikTok Ads",
+  google_ads: "Google Ads",
+  linkedin_ads: "LinkedIn Ads",
+  manual: "Manuell",
+  vermittlung: "Vermittlung",
+  lohnrechner: "Lohnrechner",
+};
+const srcLabel = (s: string | null | undefined) => (s ? SRC_LABELS[s] ?? s : "-");
 function isOverdue(lead: LeadWithRelations): boolean {
   if (!lead.next_action_date) return false;
   if (TERMINAL_LEAD.includes(lead.status?.key ?? "")) return false;
@@ -185,12 +196,14 @@ export function LeadsTable({
         />
       ) : (
         <div className="overflow-x-auto rounded-xl border border-neutral-200 bg-white">
-          <table className="w-full min-w-[60rem] text-sm">
+          <table className="w-full min-w-[72rem] text-sm">
             <thead>
               <tr className="border-b border-neutral-200 text-left text-xs uppercase tracking-wide text-neutral-400">
                 <SortHeader label="Firma" col="company_name" sp={sp} onClick={toggleSort} />
                 <th className="px-4 py-2.5 font-medium">Ansprechpartner</th>
                 <th className="px-4 py-2.5 font-medium">Status</th>
+                <th className="px-4 py-2.5 font-medium">Quelle</th>
+                <th className="px-4 py-2.5 font-medium">Kampagne</th>
                 <SortHeader label="Score" col="lead_score" sp={sp} onClick={toggleSort} />
                 <SortHeader label="Wert" col="estimated_value" sp={sp} onClick={toggleSort} />
                 <th className="px-4 py-2.5 font-medium">Verantwortlich</th>
@@ -218,6 +231,14 @@ export function LeadsTable({
                   </td>
                   <td className="px-4 py-2.5">
                     <StatusBadge label={l.status?.label} color={l.status?.color} />
+                  </td>
+                  <td className="px-4 py-2.5 text-neutral-600">
+                    {srcLabel(l.source)}
+                  </td>
+                  <td className="max-w-[14rem] px-4 py-2.5 text-neutral-600">
+                    <span className="block truncate" title={l.campaign_name ?? undefined}>
+                      {l.campaign_name ?? "-"}
+                    </span>
                   </td>
                   <td className="px-4 py-2.5">
                     <span
