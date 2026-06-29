@@ -6,6 +6,7 @@ import {
   Users,
   Factory,
   Wallet,
+  BarChart3,
   Cog,
   UserCog,
   ShieldCheck,
@@ -152,6 +153,14 @@ export const MAIN_NAV: NavItem[] = [
       { label: "Rechnungen", href: "/finance/invoices" },
       { label: "Kosten", href: "/finance/expenses" },
     ],
+  },
+  {
+    label: "Analytics",
+    href: "/analytics",
+    icon: BarChart3,
+    description:
+      "Alle Zahlen an einem Ort: Sales-Performance je Mitarbeiter, Kampagnen, Quellen und Meta.",
+    roles: SALES_ROLES,
   },
   {
     label: "Settings",

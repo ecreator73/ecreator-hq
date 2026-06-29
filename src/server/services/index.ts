@@ -66,6 +66,8 @@ export { projectListService } from "./project-list.service";
 export type { ProjectListItem } from "./project-list.service";
 export { searchService } from "./search.service";
 export type { SearchGroup, SearchItem } from "./search.service";
+export { analyticsService } from "./analytics.service";
+export type { AnalyticsOverview, CountRow, OwnerPerf } from "./analytics.service";
 export { aiPromptsService } from "./prompt.service";
 export type { PromptFilters } from "./prompt.service";
 export { aiRunsService } from "./ai.service";
