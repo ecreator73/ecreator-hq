@@ -103,14 +103,11 @@ function Widget({
 }
 
 export default async function ClientsDashboardPage() {
-  const d = await clientsOpsService.dashboard().catch(() => EMPTY_DASHBOARD);
-
-  let all: ClientWithStats[] = [];
-  try {
-    all = await clientsOpsService.listWithStats({});
-  } catch {
-    all = [];
-  }
+  // Unabhaengige Abrufe parallel.
+  const [d, all] = await Promise.all([
+    clientsOpsService.dashboard().catch(() => EMPTY_DASHBOARD),
+    clientsOpsService.listWithStats({}).catch(() => [] as ClientWithStats[]),
+  ]);
 
   const flagged = all.filter((c) => c.warnings.length > 0);
 

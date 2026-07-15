@@ -32,15 +32,14 @@ export default async function ClientsListPage({
     search: one(sp.search),
   };
 
-  let clients: ClientWithStats[] = [];
-  try {
-    clients = await clientsOpsService.listWithStats(filters);
-  } catch {
-    clients = [];
-  }
-
-  // Optionen werden geladen, damit die Server Action im Demo-Modus nicht wirft.
-  await clientFormOptionsAction().catch(() => null);
+  // Unabhaengige Abrufe parallel.
+  const [clients] = await Promise.all([
+    clientsOpsService
+      .listWithStats(filters)
+      .catch(() => [] as ClientWithStats[]),
+    // Optionen werden geladen, damit die Server Action im Demo-Modus nicht wirft.
+    clientFormOptionsAction().catch(() => null),
+  ]);
 
   return (
     <Card>

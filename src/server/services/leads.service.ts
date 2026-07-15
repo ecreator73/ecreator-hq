@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { getContext, ServiceError } from "./_helpers";
 import { clientsService } from "./clients.service";
 import { recordAudit } from "@/lib/activity";
@@ -33,7 +34,13 @@ function tomorrowISO(): string {
   return d.toISOString().slice(0, 10);
 }
 
-async function resolveLeadStatus(supabase: AnyClient): Promise<Map<string, string>> {
+/**
+ * Lead-Status-Registry (key -> id). Per React `cache()` request-weit
+ * memoisiert: die Tabelle ist quasi statisch, wurde aber pro Request bis zu
+ * 5x identisch geladen (z. B. Followups-Seite mit 4 parallelen list()-Calls).
+ */
+const resolveLeadStatus = cache(async (): Promise<Map<string, string>> => {
+  const { supabase } = await getContext();
   const { data } = await supabase
     .from("statuses")
     .select("id,key")
@@ -41,7 +48,7 @@ async function resolveLeadStatus(supabase: AnyClient): Promise<Map<string, strin
   return new Map(
     ((data ?? []) as Array<{ id: string; key: string }>).map((s) => [s.key, s.id]),
   );
-}
+});
 
 function mapLead(row: Record<string, unknown>): LeadWithRelations {
   const { status, owner, ...rest } = row as Record<string, unknown> & {
@@ -148,7 +155,7 @@ export const leadsService = {
     params: { page?: number; pageSize?: number; sort?: { column: string; ascending?: boolean } } = {},
   ): Promise<LeadListResult> {
     const { supabase } = await getContext();
-    const reg = await resolveLeadStatus(supabase);
+    const reg = await resolveLeadStatus();
     const page = Math.max(1, params.page ?? 1);
     const pageSize = Math.min(200, Math.max(1, params.pageSize ?? 50));
     const sort = params.sort ?? { column: "lead_score", ascending: false };
@@ -170,7 +177,7 @@ export const leadsService = {
 
   async board(filters: LeadFilters = {}): Promise<LeadWithRelations[]> {
     const { supabase } = await getContext();
-    const reg = await resolveLeadStatus(supabase);
+    const reg = await resolveLeadStatus();
     let query = supabase
       .from("leads")
       .select(LEAD_SELECT)
@@ -197,7 +204,7 @@ export const leadsService = {
   async create(input: LeadCreateInput): Promise<LeadWithRelations> {
     const parsed = leadInsertSchema.parse(input);
     const { supabase } = await getContext();
-    const reg = await resolveLeadStatus(supabase);
+    const reg = await resolveLeadStatus();
 
     const status = parsed.status ?? "neu";
     enforceFollowup(status, parsed.next_action_date);
@@ -232,7 +239,7 @@ export const leadsService = {
   async update(id: string, input: LeadUpdateInput): Promise<LeadWithRelations> {
     const parsed = leadUpdateSchema.parse(input);
     const { supabase, userId } = await getContext();
-    const reg = await resolveLeadStatus(supabase);
+    const reg = await resolveLeadStatus();
     const before = await this.getById(id);
     if (!before) throw new ServiceError("Lead nicht gefunden");
 
@@ -289,7 +296,7 @@ export const leadsService = {
   /** Pipeline-Drag&Drop: Status setzen, Score neu berechnen, Follow-up sichern. */
   async move(id: string, statusKey: string): Promise<LeadWithRelations> {
     const { supabase, userId } = await getContext();
-    const reg = await resolveLeadStatus(supabase);
+    const reg = await resolveLeadStatus();
     const sid = reg.get(statusKey);
     if (!sid) throw new ServiceError("Unbekannter Lead-Status");
     const before = await this.getById(id);

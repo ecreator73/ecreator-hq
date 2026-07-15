@@ -117,70 +117,35 @@ export default async function HomePage() {
   const firstName = user.fullName.split(/\s+/)[0] ?? user.fullName;
   const todayStr = today();
 
-  let counts = { today: 0, overdue: 0, critical: 0, mine: 0 };
-  let todayTasks: TaskWithRelations[] = [];
-  try {
-    counts = await tasksService.dashboardCounts(user.id);
-    todayTasks = (
-      await tasksService.list(
-        { dueTo: todayStr, excludeStatus: ["done", "archived"] },
-        { pageSize: 8, sort: { column: "due_date", ascending: true } },
-      )
-    ).rows;
-  } catch {
-    /* Demo-Modus */
-  }
+  const showSales = canAccess(user.roles, ["super_admin", "ceo", "cso", "sales"]);
+  const showFinance = canAccess(user.roles, [...FINANCE_ROLES]);
 
-  let todayEvents: GlobalCalendarEvent[] = [];
-  try {
-    todayEvents = await calendarService.events(todayStr, todayStr);
-  } catch {
-    todayEvents = [];
-  }
+  // Alle Cockpit-Bloecke sind unabhaengig -> EIN paralleler Abruf statt
+  // 8 sequenzieller Roundtrips. Fallbacks pro Block wie zuvor (Demo-Modus).
+  const [counts, todayTasks, todayEvents, sales, clientDash, prod, metaStats, finance] =
+    await Promise.all([
+      tasksService.dashboardCounts(user.id).catch(() => ({ today: 0, overdue: 0, critical: 0, mine: 0 })),
+      tasksService
+        .list(
+          { dueTo: todayStr, excludeStatus: ["done", "archived"] },
+          { pageSize: 8, sort: { column: "due_date", ascending: true } },
+        )
+        .then((r) => r.rows as TaskWithRelations[])
+        .catch(() => [] as TaskWithRelations[]),
+      calendarService.events(todayStr, todayStr).catch(() => [] as GlobalCalendarEvent[]),
+      salesDashboardService.summary().catch(() => null as SalesDashboardData | null),
+      clientsOpsService.dashboard().catch(() => null),
+      productionDashboardService.safeSummary().catch(() => null as ProductionSummary | null),
+      // Meta Lead Ads - nur fuer Sales/Leitung.
+      showSales
+        ? metaService.dashboardStats().catch(() => null)
+        : Promise.resolve(null),
+      showFinance
+        ? financeService.summary().catch(() => null as FinanceSummary | null)
+        : Promise.resolve(null as FinanceSummary | null),
+    ]);
   const meetingsToday = todayEvents.filter((e) => e.category === "meeting");
   const followupsToday = todayEvents.filter((e) => e.category === "followup");
-
-  let sales: SalesDashboardData | null = null;
-  try {
-    sales = await salesDashboardService.summary();
-  } catch {
-    sales = null;
-  }
-
-  let clientDash: Awaited<ReturnType<typeof clientsOpsService.dashboard>> | null = null;
-  try {
-    clientDash = await clientsOpsService.dashboard();
-  } catch {
-    clientDash = null;
-  }
-
-  let prod: ProductionSummary | null = null;
-  try {
-    prod = await productionDashboardService.safeSummary();
-  } catch {
-    prod = null;
-  }
-
-  // Meta Lead Ads - nur fuer Sales/Leitung, nur wenn schon Leads eingegangen sind.
-  const showSales = canAccess(user.roles, ["super_admin", "ceo", "cso", "sales"]);
-  let metaStats: { today: number; week: number; topCampaigns: Array<{ name: string; count: number }> } | null = null;
-  if (showSales) {
-    try {
-      metaStats = await metaService.dashboardStats();
-    } catch {
-      metaStats = null;
-    }
-  }
-
-  const showFinance = canAccess(user.roles, [...FINANCE_ROLES]);
-  let finance: FinanceSummary | null = null;
-  if (showFinance) {
-    try {
-      finance = await financeService.summary();
-    } catch {
-      finance = null;
-    }
-  }
 
   return (
     <div className="space-y-6">

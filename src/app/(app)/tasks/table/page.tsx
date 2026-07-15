@@ -34,19 +34,17 @@ export default async function TasksTablePage({
     ? { column: sortCol, ascending: (one(sp.dir) ?? "asc") === "asc" }
     : undefined;
 
-  let result = {
-    rows: [] as TaskWithRelations[],
-    total: 0,
-    page,
-    pageSize: 50,
-  };
-  try {
-    result = await tasksService.list(filters, { page, sort });
-  } catch {
-    // Demo-Modus / keine DB -> leere Tabelle
-  }
-
-  const optRes = await taskFormOptionsAction();
+  // Unabhaengige Abrufe parallel.
+  const [result, optRes] = await Promise.all([
+    tasksService.list(filters, { page, sort }).catch(() => ({
+      // Demo-Modus / keine DB -> leere Tabelle
+      rows: [] as TaskWithRelations[],
+      total: 0,
+      page,
+      pageSize: 50,
+    })),
+    taskFormOptionsAction(),
+  ]);
   const options =
     optRes.ok && optRes.data
       ? optRes.data

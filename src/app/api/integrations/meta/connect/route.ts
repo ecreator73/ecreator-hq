@@ -22,6 +22,10 @@ export async function GET() {
   dialog.searchParams.set("scope", META_SCOPES);
   dialog.searchParams.set("state", state);
   dialog.searchParams.set("response_type", "code");
+  // Erzwingt den vollen Zustimmungs- + Seitenauswahl-Dialog auch beim erneuten
+  // Verbinden. Ohne dies ueberspringt Facebook den Seiten-Picker und uebergibt
+  // erneut 0 Seiten (Hauptursache fuer eine "verbundene", aber leere Integration).
+  dialog.searchParams.set("auth_type", "rerequest");
 
   const res = NextResponse.redirect(dialog.toString());
   res.cookies.set("meta_oauth_state", state, {

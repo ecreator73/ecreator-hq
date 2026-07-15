@@ -45,20 +45,12 @@ function Bars({ rows }: { rows: { label: string; total: number; won?: number }[]
 export default async function AnalyticsPage() {
   await requireRole(SALES_ROLES);
 
-  let data: AnalyticsOverview | null = null;
-  try {
-    data = await analyticsService.overview();
-  } catch {
-    data = null;
-  }
-  let meta: Awaited<ReturnType<typeof metaService.dashboardStats>> | null = null;
-  let metaConn: Awaited<ReturnType<typeof metaService.connection>> | null = null;
-  try {
-    meta = await metaService.dashboardStats();
-    metaConn = await metaService.connection();
-  } catch {
-    /* Meta noch nicht eingerichtet */
-  }
+  // Unabhaengige Abrufe parallel.
+  const [data, meta, metaConn] = await Promise.all([
+    analyticsService.overview().catch(() => null as AnalyticsOverview | null),
+    metaService.dashboardStats().catch(() => null), // Meta noch nicht eingerichtet
+    metaService.connection().catch(() => null),
+  ]);
 
   const metaTotal = data?.bySource.find((s) => s.key === "meta_ads")?.total ?? 0;
 

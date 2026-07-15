@@ -138,9 +138,12 @@ export const creatorsService = {
 
   async getWithStats(id: string): Promise<CreatorWithStats | null> {
     const { supabase } = await getContext();
-    const c = await this.getById(id);
+    // Unabhaengige Abrufe parallel.
+    const [c, aux] = await Promise.all([
+      this.getById(id),
+      loadAux(supabase, [id]),
+    ]);
     if (!c) return null;
-    const aux = await loadAux(supabase, [id]);
     return compose(c, aux);
   },
 

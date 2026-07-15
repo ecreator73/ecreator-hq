@@ -2,16 +2,19 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Loader2, RefreshCw, Webhook, PlugZap, Unplug, CheckCircle2, AlertTriangle } from "lucide-react";
+import { Loader2, RefreshCw, Webhook, PlugZap, Unplug, CheckCircle2, AlertTriangle, Stethoscope } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { cn, formatDate } from "@/lib/utils";
+import type { MetaDiagnosis } from "@/server/integrations/meta/service";
 import {
   loadFormsAction,
   saveFormsAction,
   subscribeWebhooksAction,
   syncHistoricalAction,
   disconnectMetaAction,
+  refreshPagesAction,
+  diagnoseMetaAction,
 } from "@/app/(app)/settings/integrations/meta/actions";
 
 interface Connection {
@@ -38,12 +41,15 @@ export function MetaConnectionPanel({
   const router = useRouter();
   const [pending, start] = useTransition();
   const [msg, setMsg] = useState<{ tone: "ok" | "err"; text: string } | null>(null);
+  const [diag, setDiag] = useState<MetaDiagnosis | null>(null);
   const [forms, setForms] = useState<FormItem[]>([]);
   const [selected, setSelected] = useState<Set<string>>(
     new Set((connection?.config.forms ?? []).map((f) => f.id)),
   );
 
   const connected = connection?.status === "connected";
+  const pageCount = connection?.config.pages?.length ?? 0;
+  const noPages = connected && pageCount === 0;
 
   function run(fn: () => Promise<{ ok: boolean; error?: string; data?: unknown }>, okText: string) {
     setMsg(null);
@@ -54,12 +60,60 @@ export function MetaConnectionPanel({
     });
   }
 
+  function refreshPages() {
+    setMsg(null);
+    start(async () => {
+      const r = await refreshPagesAction();
+      if (!r.ok) { setMsg({ tone: "err", text: r.error }); return; }
+      const count = r.data?.count ?? 0;
+      if (count === 0) {
+        setMsg({ tone: "err", text: "0 Seiten gefunden. Das verbundene Facebook-Konto gibt keine Seite frei: der Account muss Admin/Editor der werbenden Seite sein und die Seite beim Verbinden ausgewählt werden. Bitte 'Trennen' und neu verbinden." });
+      } else {
+        setMsg({ tone: "ok", text: `${count} Seite(n) gefunden: ${(r.data?.names ?? []).join(", ")}.` });
+      }
+      router.refresh();
+    });
+  }
+
+  function diagnose() {
+    setMsg(null);
+    start(async () => {
+      const r = await diagnoseMetaAction();
+      if (!r.ok) { setMsg({ tone: "err", text: r.error }); return; }
+      setDiag(r.data ?? null);
+    });
+  }
+
+  function subscribe() {
+    setMsg(null);
+    start(async () => {
+      const r = await subscribeWebhooksAction();
+      if (!r.ok) { setMsg({ tone: "err", text: r.error }); return; }
+      const d = r.data ?? { ok: 0, failed: 0, errors: [] };
+      if (d.ok === 0) {
+        const why = d.errors.length ? ` (${d.errors.join("; ")})` : " — keine verbundene Seite mit Page-Token. Bitte zuerst eine Seite verbinden.";
+        setMsg({ tone: "err", text: `Kein Webhook abonniert${why}` });
+      } else {
+        setMsg({ tone: "ok", text: `Webhook für ${d.ok} Seite(n) abonniert${d.failed ? `, ${d.failed} fehlgeschlagen` : ""}.` });
+      }
+      router.refresh();
+    });
+  }
+
   function loadForms() {
     setMsg(null);
     start(async () => {
       const r = await loadFormsAction();
-      if (!r.ok) setMsg({ tone: "err", text: r.error });
-      else setForms(r.data ?? []);
+      if (!r.ok) { setMsg({ tone: "err", text: r.error }); return; }
+      const list = r.data ?? [];
+      setForms(list);
+      if (list.length === 0) {
+        setMsg({ tone: "err", text: pageCount === 0
+          ? "Keine Formulare: es ist keine Facebook-Seite verbunden (0 Seiten). Erst 'Seiten aktualisieren' bzw. neu verbinden."
+          : "Keine Lead-Formulare auf den verbundenen Seiten gefunden (oder fehlende Berechtigung leads_retrieval)." });
+      } else {
+        setMsg({ tone: "ok", text: `${list.length} Formular(e) gefunden.` });
+      }
     });
   }
   function saveForms() {
@@ -120,11 +174,28 @@ export function MetaConnectionPanel({
                 <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700">{connection.last_error}</p>
               ) : null}
 
+              {noPages ? (
+                <div className="flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800">
+                  <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+                  <div className="space-y-1">
+                    <p className="font-medium">0 Facebook-Seiten verbunden — deshalb reagieren „Formulare laden" und „Webhook abonnieren" nicht.</p>
+                    <p className="text-amber-700">
+                      Klicke „Seiten aktualisieren" (holt Seiten mit dem bestehenden Token). Kommen weiter 0 Seiten, dann gibt dein Facebook-Konto keine Seite frei:
+                      der eingeloggte Account muss <strong>Admin/Editor</strong> der werbenden Seite sein, und beim Verbinden muss die Seite <strong>angehakt</strong> werden → „Trennen" und neu verbinden.
+                    </p>
+                  </div>
+                </div>
+              ) : null}
+
               <div className="flex flex-wrap gap-2">
-                <Btn onClick={() => run(subscribeWebhooksAction, "Webhook abonniert.")} pending={pending} icon={Webhook}>Webhook abonnieren</Btn>
+                <Btn onClick={refreshPages} pending={pending} icon={RefreshCw} variant="secondary">Seiten aktualisieren</Btn>
+                <Btn onClick={diagnose} pending={pending} icon={Stethoscope} variant="secondary">Diagnose</Btn>
+                <Btn onClick={subscribe} pending={pending} icon={Webhook}>Webhook abonnieren</Btn>
                 <Btn onClick={() => run(syncHistoricalAction, "Synchronisation gestartet.")} pending={pending} icon={RefreshCw}>Leads synchronisieren</Btn>
                 <Btn onClick={() => run(disconnectMetaAction, "Verbindung getrennt.")} pending={pending} icon={Unplug} variant="ghost">Trennen</Btn>
               </div>
+
+              {diag ? <DiagView diag={diag} /> : null}
             </>
           )}
         </CardContent>
@@ -183,6 +254,81 @@ export function MetaConnectionPanel({
           )}
         </CardContent>
       </Card>
+    </div>
+  );
+}
+
+function DiagView({ diag }: { diag: MetaDiagnosis }) {
+  const perm = (k: string) => diag.permissions.find((p) => p.permission === k)?.status;
+  const need = ["pages_show_list", "leads_retrieval", "pages_read_engagement", "pages_manage_metadata"];
+  const bizPages = diag.businesses.reduce((n, b) => n + b.ownedPages.length + b.clientPages.length, 0);
+
+  let verdict: { tone: "ok" | "warn" | "err"; text: string };
+  if (!diag.hasToken) verdict = { tone: "err", text: "Kein gespeichertes Token — bitte neu verbinden." };
+  else if (diag.meError) verdict = { tone: "err", text: `Token ungültig/abgelaufen (${diag.meError}). Bitte 'Trennen' und neu verbinden.` };
+  else if (diag.accounts.length > 0) verdict = { tone: "ok", text: `Facebook liefert ${diag.accounts.length} Seite(n). Klicke jetzt 'Seiten aktualisieren', danach Formulare laden und Webhook abonnieren.` };
+  else if (perm("pages_show_list") !== "granted") verdict = { tone: "err", text: "Die Berechtigung 'pages_show_list' wurde NICHT erteilt — deshalb 0 Seiten. Beim Verbinden diese Berechtigung zulassen: 'Trennen', dann neu verbinden und im Facebook-Dialog alle Häkchen gesetzt lassen." };
+  else if (bizPages > 0) verdict = { tone: "warn", text: "0 Seiten über me/accounts, ABER im Business Manager sind Seiten sichtbar (New Pages Experience). Dein Account braucht eine klassische Seiten-Rolle (Admin) direkt auf der Seite — eine reine Business-Rolle reicht Graph hier nicht." };
+  else verdict = { tone: "err", text: "Facebook gibt keine Seite frei. Der eingeloggte Account ist auf keiner Seite Admin/Editor. Bitte mit dem Account verbinden, der Admin der werbenden Seite ist." };
+
+  return (
+    <div className="space-y-3 rounded-lg border border-neutral-200 bg-neutral-50 p-3 text-sm">
+      <p className={cn("rounded-md px-3 py-2 font-medium",
+        verdict.tone === "ok" ? "bg-emerald-100 text-emerald-800" : verdict.tone === "warn" ? "bg-amber-100 text-amber-800" : "bg-red-100 text-red-800")}>
+        {verdict.text}
+      </p>
+
+      <div>
+        <p className="text-xs font-semibold uppercase tracking-wide text-neutral-400">Konto</p>
+        <p className="text-neutral-700">{diag.me ? `${diag.me.name} (${diag.me.id})` : diag.meError ?? "—"}</p>
+      </div>
+
+      <div>
+        <p className="text-xs font-semibold uppercase tracking-wide text-neutral-400">Berechtigungen</p>
+        {diag.permissionsError ? <p className="text-red-600">{diag.permissionsError}</p> : (
+          <div className="mt-1 flex flex-wrap gap-1.5">
+            {need.map((k) => {
+              const s = perm(k);
+              return (
+                <span key={k} className={cn("rounded-full px-2 py-0.5 text-xs", s === "granted" ? "bg-emerald-100 text-emerald-700" : "bg-red-100 text-red-700")}>
+                  {k}: {s ?? "fehlt"}
+                </span>
+              );
+            })}
+          </div>
+        )}
+      </div>
+
+      <div>
+        <p className="text-xs font-semibold uppercase tracking-wide text-neutral-400">Seiten (me/accounts)</p>
+        {diag.accountsError ? <p className="text-red-600">{diag.accountsError}</p> : diag.accounts.length === 0 ? (
+          <p className="text-neutral-500">0</p>
+        ) : (
+          <ul className="list-disc pl-5 text-neutral-700">
+            {diag.accounts.map((p) => <li key={p.id}>{p.name} <span className="text-neutral-400">({p.id})</span></li>)}
+          </ul>
+        )}
+      </div>
+
+      <div>
+        <p className="text-xs font-semibold uppercase tracking-wide text-neutral-400">Business Manager</p>
+        {diag.businessesError ? <p className="text-red-600">{diag.businessesError}</p> : diag.businesses.length === 0 ? (
+          <p className="text-neutral-500">Keine Businesses sichtbar</p>
+        ) : (
+          <ul className="space-y-1 text-neutral-700">
+            {diag.businesses.map((b) => {
+              const all = [...b.ownedPages, ...b.clientPages];
+              return (
+                <li key={b.id}>
+                  <span className="font-medium">{b.name}</span>
+                  <span className="text-neutral-400"> — owned: {b.ownedPages.length}, client: {b.clientPages.length}</span>
+                  {all.length > 0 ? <span className="text-neutral-500"> ({all.map((p) => p.name).join(", ")})</span> : null}
+                </li>
+              );
+            })}
+          </ul>
+        )}
+      </div>
     </div>
   );
 }

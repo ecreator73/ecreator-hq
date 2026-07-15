@@ -229,10 +229,10 @@ export const productionDashboardService = {
   /** Team-Auslastung: offene Aufgaben, Projekte und Stunden je Mitarbeiter. */
   async workload(): Promise<WorkloadRow[]> {
     const { supabase } = await getContext();
-    const members: ProfileMini[] = await teamService.listMembers().catch(() => []);
-    if (members.length === 0) return [];
 
-    const [tasksRes, ...projRes] = await Promise.all([
+    // Unabhaengige Abrufe parallel.
+    const [members, tasksRes, ...projRes] = await Promise.all([
+      teamService.listMembers().catch(() => [] as ProfileMini[]),
       supabase
         .from("tasks")
         .select(
@@ -243,6 +243,7 @@ export const productionDashboardService = {
         supabase.from(tbl).select("owner_id").is("deleted_at", null),
       ),
     ]);
+    if (members.length === 0) return [];
 
     const rows = new Map<string, WorkloadRow>();
     for (const m of members) {

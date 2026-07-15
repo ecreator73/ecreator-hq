@@ -16,19 +16,20 @@ export default async function LeadDetailPage({
 }) {
   const { id } = await params;
 
-  const lead = await leadsService.getById(id).catch(() => null);
+  // Unabhaengige Abrufe parallel.
+  const [lead, activities, meetings, taskRes, offers, optRes] =
+    await Promise.all([
+      leadsService.getById(id).catch(() => null),
+      salesActivitiesService.listByLead(id).catch(() => []),
+      salesMeetingsService.listByLead(id).catch(() => []),
+      tasksService
+        .list({ lead_id: id })
+        .then((r) => r.rows)
+        .catch(() => []),
+      offersService.list({ filter: { lead_id: id } }).catch(() => []),
+      salesFormOptionsAction(),
+    ]);
   if (!lead) notFound();
-
-  const [activities, meetings, taskRes, offers, optRes] = await Promise.all([
-    salesActivitiesService.listByLead(id).catch(() => []),
-    salesMeetingsService.listByLead(id).catch(() => []),
-    tasksService
-      .list({ lead_id: id })
-      .then((r) => r.rows)
-      .catch(() => []),
-    offersService.list({ filter: { lead_id: id } }).catch(() => []),
-    salesFormOptionsAction(),
-  ]);
 
   const options =
     optRes.ok && optRes.data

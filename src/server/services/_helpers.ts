@@ -1,3 +1,4 @@
+import { cache } from "react";
 import type { ZodTypeAny } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
@@ -21,8 +22,13 @@ export class ServiceError extends Error {
   }
 }
 
-/** Supabase-Server-Client + aktuelle Nutzer-ID (fuer created_by/updated_by). */
-export async function getContext() {
+/**
+ * Supabase-Server-Client + aktuelle Nutzer-ID (fuer created_by/updated_by).
+ * Per React `cache()` request-weit dedupliziert: auth.getUser() ist ein
+ * Netzwerk-Roundtrip und lief frueher bei JEDEM Service-Aufruf erneut
+ * (Dashboard-Seiten = 8+ Aufrufe). Jetzt genau 1x pro Request.
+ */
+export const getContext = cache(async () => {
   // Ohne Konfiguration (Demo-Modus) sofort abbrechen, statt langsam fehl-
   // zuschlagende Netzwerk-Requests gegen eine Platzhalter-URL auszuloesen.
   if (!isSupabaseConfigured()) {
@@ -33,7 +39,7 @@ export async function getContext() {
     data: { user },
   } = await supabase.auth.getUser();
   return { supabase, userId: user?.id ?? null };
-}
+});
 
 /** Deutsche Substantive fuer den Activity-Feed. */
 const ENTITY_NOUNS: Record<string, string> = {

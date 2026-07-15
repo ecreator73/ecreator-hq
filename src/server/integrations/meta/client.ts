@@ -114,8 +114,21 @@ export const metaClient = {
   async me(token: string): Promise<MetaNamed> {
     return graphGet<MetaNamed>("me", token, { fields: "id,name" });
   },
+  /** Erteilte/abgelehnte Berechtigungen des Tokens (Diagnose). */
+  async permissions(token: string): Promise<Array<{ permission: string; status: string }>> {
+    const r = await graphGet<{ data?: Array<{ permission: string; status: string }> }>("me/permissions", token);
+    return r.data ?? [];
+  },
   async businesses(token: string): Promise<MetaNamed[]> {
     return graphList<MetaNamed>("me/businesses", token, { fields: "id,name" });
+  },
+  /** Seiten, die einem Business gehoeren (New Pages Experience / Business Manager). */
+  async ownedPages(businessId: string, token: string): Promise<MetaNamed[]> {
+    return graphList<MetaNamed>(`${businessId}/owned_pages`, token, { fields: "id,name" });
+  },
+  /** Seiten, auf die ein Business Client-Zugriff hat. */
+  async clientPages(businessId: string, token: string): Promise<MetaNamed[]> {
+    return graphList<MetaNamed>(`${businessId}/client_pages`, token, { fields: "id,name" });
   },
   async adAccounts(token: string): Promise<MetaNamed[]> {
     return graphList<MetaNamed>("me/adaccounts", token, { fields: "id,name,account_id" });

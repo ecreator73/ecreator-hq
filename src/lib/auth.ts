@@ -33,16 +33,15 @@ export const getSessionUser = cache(async (): Promise<AppUser | null> => {
   } = await supabase.auth.getUser();
   if (error || !user) return null;
 
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("id, full_name, email, avatar_url, is_active")
-    .eq("id", user.id)
-    .maybeSingle();
-
-  const { data: roleRows } = await supabase
-    .from("user_roles")
-    .select("role:roles(key)")
-    .eq("user_id", user.id);
+  // Profil + Rollen sind unabhaengig -> parallel (laeuft bei jeder Navigation).
+  const [{ data: profile }, { data: roleRows }] = await Promise.all([
+    supabase
+      .from("profiles")
+      .select("id, full_name, email, avatar_url, is_active")
+      .eq("id", user.id)
+      .maybeSingle(),
+    supabase.from("user_roles").select("role:roles(key)").eq("user_id", user.id),
+  ]);
 
   const roles = (
     (roleRows ?? []) as unknown as Array<{ role: { key: string } | null }>

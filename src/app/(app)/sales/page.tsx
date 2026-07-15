@@ -80,19 +80,17 @@ function Widget({
 }
 
 export default async function SalesDashboardPage() {
-  const d = await salesDashboardService.summary().catch(() => EMPTY_SUMMARY);
-
-  let heuteLeads: LeadWithRelations[] = [];
-  try {
-    heuteLeads = await leadsService
+  // Unabhaengige Abrufe parallel statt nacheinander.
+  const [d, heuteLeads] = await Promise.all([
+    salesDashboardService.summary().catch(() => EMPTY_SUMMARY),
+    leadsService
       .list(
         { dueTo: today(), excludeStatus: ["abgeschlossen", "absage", "fehleintrag", "andere"] },
         { pageSize: 8, sort: { column: "next_action_date", ascending: true } },
       )
-      .then((r) => r.rows);
-  } catch {
-    heuteLeads = [];
-  }
+      .then((r) => r.rows as LeadWithRelations[])
+      .catch(() => [] as LeadWithRelations[]),
+  ]);
 
   return (
     <div className="space-y-6">

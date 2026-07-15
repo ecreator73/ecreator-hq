@@ -15,15 +15,15 @@ export default async function TaskDetailPage({
 }) {
   const { id } = await params;
 
-  const task = await tasksService.getById(id).catch(() => null);
-  if (!task) notFound();
-
-  const [subtasks, comments, activity, optRes] = await Promise.all([
+  // Unabhaengige Abrufe parallel.
+  const [task, subtasks, comments, activity, optRes] = await Promise.all([
+    tasksService.getById(id).catch(() => null),
     subtasksService.listByTask(id).catch(() => []),
     taskCommentsService.listByTask(id).catch(() => []),
     taskActivityService.listByTask(id).catch(() => []),
     taskFormOptionsAction(),
   ]);
+  if (!task) notFound();
 
   const options =
     optRes.ok && optRes.data

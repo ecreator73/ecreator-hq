@@ -31,6 +31,17 @@ export interface MetaConnectionRow {
   last_error: string | null;
   has_credentials: boolean;
 }
+export interface MetaDiagnosis {
+  hasToken: boolean;
+  me?: { id: string; name: string } | null;
+  meError?: string;
+  permissions: Array<{ permission: string; status: string }>;
+  permissionsError?: string;
+  accounts: Array<{ id: string; name: string }>;
+  accountsError?: string;
+  businesses: Array<{ id: string; name: string; ownedPages: Array<{ id: string; name: string }>; clientPages: Array<{ id: string; name: string }> }>;
+  businessesError?: string;
+}
 
 function admin(): Admin {
   return createAdminClient();
@@ -104,6 +115,33 @@ export const metaService = {
     const row = await rawConnection(db);
     const config = { ...(row?.config ?? {}), ...patch };
     await db.from("ad_integrations").update({ config }).eq("provider", PROVIDER);
+  },
+
+  /**
+   * Seiten (inkl. Page-Tokens) mit dem gespeicherten User-Token NEU abrufen -
+   * ohne kompletten OAuth-Reconnect. Nuetzlich, wenn die Admin-Rolle auf einer
+   * Seite erst NACH dem Verbinden erteilt wurde. Liefert die gefundene Anzahl;
+   * 0 => das Facebook-Konto gibt (noch) keine Seite frei.
+   */
+  async refreshPages(): Promise<{ count: number; names: string[] }> {
+    const db = admin();
+    const row = await rawConnection(db);
+    const creds = decryptCreds(row);
+    const userToken = creds.user_token;
+    if (!userToken) throw new Error("Kein gespeichertes User-Token - bitte neu verbinden.");
+    const pages = await metaClient.pages(userToken);
+    const pageTokens: Record<string, string> = {};
+    for (const p of pages) pageTokens[p.id] = p.access_token;
+    const newCreds: MetaCredentials = { user_token: userToken, page_tokens: pageTokens };
+    const config = { ...(row?.config ?? {}), pages: pages.map((p) => ({ id: p.id, name: p.name })) };
+    await db.from("ad_integrations").update({
+      config,
+      credentials_encrypted: encryptSecret(JSON.stringify(newCreds)),
+      last_error: pages.length === 0
+        ? "0 Seiten: Das verbundene Facebook-Konto gibt keine Seite frei. Der Account muss Admin/Editor der Seite sein, und beim Verbinden muss die Seite ausgewaehlt werden."
+        : null,
+    }).eq("provider", PROVIDER);
+    return { count: pages.length, names: pages.map((p) => p.name) };
   },
 
   async disconnect(): Promise<void> {
@@ -250,6 +288,34 @@ export const metaService = {
     }
     await db.from("ad_integrations").update({ last_sync_at: new Date().toISOString() }).eq("provider", PROVIDER);
     return { created, updated, errors };
+  },
+
+  /**
+   * Direkte Graph-Abfrage mit dem gespeicherten User-Token: welche Rechte sind
+   * erteilt, welche Seiten/Businesses sieht Facebook wirklich. Zeigt die WAHRE
+   * Ursache, wenn trotz "Seite ausgewaehlt" 0 Seiten ankommen. Keine Tokens raus.
+   */
+  async diagnose(): Promise<MetaDiagnosis> {
+    const db = admin();
+    const row = await rawConnection(db);
+    const token = decryptCreds(row).user_token;
+    const out: MetaDiagnosis = { hasToken: Boolean(token), permissions: [], accounts: [], businesses: [] };
+    if (!token) return out;
+    const msg = (e: unknown) => (e instanceof Error ? e.message : "Fehler");
+
+    try { out.me = await metaClient.me(token); } catch (e) { out.meError = msg(e); }
+    try { out.permissions = await metaClient.permissions(token); } catch (e) { out.permissionsError = msg(e); }
+    try { out.accounts = (await metaClient.pages(token)).map((p) => ({ id: p.id, name: p.name })); } catch (e) { out.accountsError = msg(e); }
+    try {
+      const biz = await metaClient.businesses(token);
+      for (const b of biz) {
+        const entry = { id: b.id, name: b.name, ownedPages: [] as Array<{ id: string; name: string }>, clientPages: [] as Array<{ id: string; name: string }> };
+        try { entry.ownedPages = await metaClient.ownedPages(b.id, token); } catch { /* ignore */ }
+        try { entry.clientPages = await metaClient.clientPages(b.id, token); } catch { /* ignore */ }
+        out.businesses.push(entry);
+      }
+    } catch (e) { out.businessesError = msg(e); }
+    return out;
   },
 
   /** Lead-Formulare aller verbundenen Seiten (fuer die Auswahl in Settings). */

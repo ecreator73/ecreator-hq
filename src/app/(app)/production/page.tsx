@@ -131,58 +131,43 @@ function clientLink(client: { id: string; name: string } | null) {
 }
 
 export default async function ProductionDashboardPage() {
-  const s = await productionDashboardService
-    .safeSummary()
-    .catch(() => EMPTY_SUMMARY);
-
   const week = weekRange();
-
-  let openApprovals: ApprovalWithRelations[] = [];
-  try {
-    openApprovals = await approvalsService.list({ status: "open" });
-  } catch {
-    openApprovals = [];
-  }
-
-  let weekShoots: ShootWithRelations[] = [];
-  try {
-    weekShoots = await shootsService.list({
-      from: week.from,
-      to: week.to,
-      statusIn: ["planned", "confirmed"],
-    });
-  } catch {
-    weekShoots = [];
-  }
-
   const t = today();
-  let overdueLaunches: WebsiteProjectWithRelations[] = [];
-  try {
-    const websites = await websiteProjectsService.list();
-    overdueLaunches = websites.filter(
-      (w) =>
-        w.launch_date != null &&
-        w.launch_date < t &&
-        w.status !== "completed",
-    );
-  } catch {
-    overdueLaunches = [];
-  }
-
   const in7 = isoDay(addDays(new Date(), 7));
-  let crmGoLives: CrmProjectWithRelations[] = [];
-  try {
-    const crm = await crmProjectsService.list();
-    crmGoLives = crm.filter(
-      (c) =>
-        c.go_live_date != null &&
-        c.go_live_date >= t &&
-        c.go_live_date <= in7 &&
-        c.status !== "live",
-    );
-  } catch {
-    crmGoLives = [];
-  }
+
+  // Unabhaengige Abrufe parallel.
+  const [s, openApprovals, weekShoots, websites, crm] = await Promise.all([
+    productionDashboardService.safeSummary().catch(() => EMPTY_SUMMARY),
+    approvalsService
+      .list({ status: "open" })
+      .catch(() => [] as ApprovalWithRelations[]),
+    shootsService
+      .list({
+        from: week.from,
+        to: week.to,
+        statusIn: ["planned", "confirmed"],
+      })
+      .catch(() => [] as ShootWithRelations[]),
+    websiteProjectsService
+      .list()
+      .catch(() => [] as WebsiteProjectWithRelations[]),
+    crmProjectsService.list().catch(() => [] as CrmProjectWithRelations[]),
+  ]);
+
+  const overdueLaunches = websites.filter(
+    (w) =>
+      w.launch_date != null &&
+      w.launch_date < t &&
+      w.status !== "completed",
+  );
+
+  const crmGoLives = crm.filter(
+    (c) =>
+      c.go_live_date != null &&
+      c.go_live_date >= t &&
+      c.go_live_date <= in7 &&
+      c.status !== "live",
+  );
 
   return (
     <div className="space-y-6">

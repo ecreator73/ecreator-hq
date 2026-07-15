@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { getContext } from "./_helpers";
 import {
   isoDay,
@@ -45,27 +46,28 @@ interface ExpenseRow {
 }
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
-async function loadContracts(supabase: any): Promise<ContractRow[]> {
+// Loader per React cache() request-weit memoisiert (supabase kommt referenzstabil aus getContext()).
+const loadContracts = cache(async (supabase: any): Promise<ContractRow[]> => {
   const { data } = await supabase
     .from("contracts")
     .select("client_id, value_monthly, status, start_date, end_date, renewal_type, title")
     .is("deleted_at", null);
   return (data ?? []) as ContractRow[];
-}
-async function loadInvoices(supabase: any): Promise<InvoiceRow[]> {
+});
+const loadInvoices = cache(async (supabase: any): Promise<InvoiceRow[]> => {
   const { data } = await supabase
     .from("invoices")
     .select("client_id, amount, status, due_date, paid_date")
     .is("deleted_at", null);
   return (data ?? []) as InvoiceRow[];
-}
-async function loadExpenses(supabase: any): Promise<ExpenseRow[]> {
+});
+const loadExpenses = cache(async (supabase: any): Promise<ExpenseRow[]> => {
   const { data } = await supabase
     .from("expenses")
     .select("amount, recurring, recurring_frequency, date")
     .is("deleted_at", null);
   return (data ?? []) as ExpenseRow[];
-}
+});
 /* eslint-enable @typescript-eslint/no-explicit-any */
 
 function activeMrr(contracts: ContractRow[]): number {
@@ -353,10 +355,12 @@ export const financeService = {
     topClients: CustomerValue[];
   }> {
     const { supabase } = await getContext();
-    const [contracts, invoices, expenses] = await Promise.all([
+    // Unabhaengige Abrufe parallel (customerValues gleich mit).
+    const [contracts, invoices, expenses, topClients] = await Promise.all([
       loadContracts(supabase),
       loadInvoices(supabase),
       loadExpenses(supabase),
+      this.customerValues(),
     ]);
     const now = new Date();
     const recCost = recurringMonthlyCost(expenses);
@@ -372,7 +376,6 @@ export const financeService = {
       costSeries.push({ month: b.key, value: recCost + oneOff });
     }
 
-    const topClients = await this.customerValues();
     return {
       revenueSeries,
       costSeries,

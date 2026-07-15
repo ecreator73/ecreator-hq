@@ -49,19 +49,11 @@ function ClientCell({
 
 export default async function ReviewsPage() {
   // Rollen-Guard liegt im growth/layout.tsx. Hier nur Daten laden.
-  let revs: ReviewRequestWithClient[] = [];
-  try {
-    revs = await reviewService.list();
-  } catch {
-    revs = [];
-  }
-
-  let refs: ReferralOpportunityWithClient[] = [];
-  try {
-    refs = await referralService.list();
-  } catch {
-    refs = [];
-  }
+  // Unabhaengige Abrufe parallel.
+  const [revs, refs] = await Promise.all([
+    reviewService.list().catch(() => [] as ReviewRequestWithClient[]),
+    referralService.list().catch(() => [] as ReferralOpportunityWithClient[]),
+  ]);
 
   return (
     <div className="space-y-6">

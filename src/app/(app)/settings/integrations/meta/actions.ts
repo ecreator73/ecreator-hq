@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { requireRole } from "@/lib/auth";
-import { metaService } from "@/server/integrations/meta/service";
+import { metaService, type MetaDiagnosis } from "@/server/integrations/meta/service";
 
 const ROLES = ["super_admin", "ceo", "cso"] as const;
 
@@ -14,6 +14,28 @@ function fail(e: unknown): { ok: false; error: string } {
   return { ok: false, error: e instanceof Error ? e.message : "Unbekannter Fehler" };
 }
 const revalidate = () => revalidatePath("/settings/integrations/meta");
+
+export async function diagnoseMetaAction(): Promise<ActionResult<MetaDiagnosis>> {
+  try {
+    await requireRole([...ROLES]);
+    return { ok: true, data: await metaService.diagnose() };
+  } catch (e) {
+    return fail(e);
+  }
+}
+
+export async function refreshPagesAction(): Promise<
+  ActionResult<{ count: number; names: string[] }>
+> {
+  try {
+    await requireRole([...ROLES]);
+    const res = await metaService.refreshPages();
+    revalidate();
+    return { ok: true, data: res };
+  } catch (e) {
+    return fail(e);
+  }
+}
 
 export async function loadFormsAction(): Promise<
   ActionResult<Array<{ id: string; name: string; page_id: string; page_name: string }>>

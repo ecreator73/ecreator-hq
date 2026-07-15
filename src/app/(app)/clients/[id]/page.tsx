@@ -37,10 +37,9 @@ export default async function ClientDetailPage({
   await requireUser();
   const { id } = await params;
 
-  const client = await clientsOpsService.getWithStats(id).catch(() => null);
-  if (!client) notFound();
-
+  // Unabhaengige Abrufe parallel.
   const [
+    client,
     projects,
     tasks,
     reportingCalls,
@@ -52,6 +51,7 @@ export default async function ClientDetailPage({
     invoices,
     optionsResult,
   ] = await Promise.all([
+    clientsOpsService.getWithStats(id).catch(() => null),
     projectsService
       .list({ filter: { client_id: id } })
       .catch((): Project[] => []),
@@ -85,6 +85,7 @@ export default async function ClientDetailPage({
       .catch((): InvoiceWithClient[] => []),
     clientFormOptionsAction().catch(() => ({ ok: false as const, error: "" })),
   ]);
+  if (!client) notFound();
 
   const users =
     optionsResult.ok && optionsResult.data ? optionsResult.data.users : [];

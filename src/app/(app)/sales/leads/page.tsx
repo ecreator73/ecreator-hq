@@ -44,19 +44,16 @@ export default async function SalesLeadsPage({
     ? { column: sortCol, ascending: (one(sp.dir) ?? "asc") === "asc" }
     : undefined;
 
-  let result = {
-    rows: [] as LeadWithRelations[],
-    total: 0,
-    page,
-    pageSize: 50,
-  };
-  try {
-    result = await leadsService.list(filters, { page, sort });
-  } catch {
-    // Demo-Modus / keine DB -> leere Tabelle
-  }
-
-  const optRes = await salesFormOptionsAction();
+  // Leads + Formular-Optionen parallel laden (unabhaengig voneinander).
+  const [result, optRes] = await Promise.all([
+    leadsService.list(filters, { page, sort }).catch(() => ({
+      rows: [] as LeadWithRelations[],
+      total: 0,
+      page,
+      pageSize: 50,
+    })),
+    salesFormOptionsAction(),
+  ]);
   const users = optRes.ok && optRes.data ? optRes.data.users : [];
 
   return (
