@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Flame, Info, MessageSquare, Users } from "lucide-react";
+import { Flame, Info, MessageSquare, Users, Zap } from "lucide-react";
 import { PageHeader } from "@/components/page-header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -131,6 +131,14 @@ export default async function LinkedInDashboardPage() {
       <PageHeader
         title="LinkedIn-Dashboard"
         description="Tagesueberblick fuer die LinkedIn-Akquise — Follow-ups, neue Antworten und Pipeline auf einen Blick."
+        actions={
+          <Link
+            href="/sales/linkedin/session"
+            className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-brand-600 px-3 text-sm font-medium text-white shadow-sm transition-colors hover:bg-brand-700"
+          >
+            <Zap className="h-4 w-4" /> Session starten
+          </Link>
+        }
       />
 
       {data === null ? (
