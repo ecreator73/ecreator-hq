@@ -11,7 +11,7 @@ import {
  * werden von externen Servern OHNE Session aufgerufen und duerfen daher nicht
  * auf /login umgeleitet werden.
  */
-const PUBLIC_PATHS = ["/login", "/api/webhooks"];
+const PUBLIC_PATHS = ["/login", "/api/webhooks", "/api/cron"];
 
 function isPublicPath(pathname: string): boolean {
   return PUBLIC_PATHS.some(
