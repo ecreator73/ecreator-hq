@@ -137,6 +137,19 @@ export {
   growthAlertsService,
 } from "./growth-engine.service";
 export { importService } from "./import.service";
+export {
+  linkedinCampaignsService,
+  linkedinProspectsService,
+  linkedinActivitiesService,
+  linkedinTemplatesService,
+  linkedinMessagesService,
+  linkedinDashboardService,
+} from "./linkedin.service";
+export type {
+  ProspectFilters,
+  ProspectListResult,
+  LinkedInDashboardData,
+} from "./linkedin.service";
 export type {
   CustomerImportOptions,
   ImportResult,

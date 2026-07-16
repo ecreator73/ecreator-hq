@@ -33,6 +33,10 @@ import type {
   OutreachMessageStatus,
   BookedMeetingStatus,
   ProposalStatus,
+  LinkedInProspectStatus,
+  LinkedInPriority,
+  LinkedInTemplateCategory,
+  LinkedInActivityType,
 } from "@/config/catalog";
 
 /** Gemeinsame Felder jeder fachlichen Tabelle. */
@@ -1695,4 +1699,100 @@ export interface AssistantAnswer {
   question: string;
   summary: string;
   items: AssistantAnswerItem[];
+}
+
+/* --------------------------------------------------------------------------
+ * Phase 19 - LinkedIn Sales
+ * ------------------------------------------------------------------------ */
+
+export interface LinkedInCampaign {
+  id: string;
+  org_id: string;
+  name: string;
+  description: string | null;
+  target_audience: string | null;
+  status: "active" | "paused" | "archived";
+  created_by: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface LinkedInProspect extends AuditedEntity {
+  full_name: string;
+  company_name: string | null;
+  position: string | null;
+  industry: string | null;
+  company_size: string | null;
+  location: string | null;
+  linkedin_url: string | null;
+  website: string | null;
+  phone: string | null;
+  email: string | null;
+  status: LinkedInProspectStatus;
+  campaign_id: string | null;
+  owner_id: string | null;
+  priority: LinkedInPriority;
+  lead_score: number;
+  last_activity_at: string | null;
+  next_followup_date: string | null;
+  company_description: string | null;
+  services: string | null;
+  social_links: string | null;
+  google_reviews: string | null;
+  possible_problems: string | null;
+  potential_marketing: string | null;
+  potential_crm: string | null;
+  potential_seo: string | null;
+  potential_ads: string | null;
+  potential_website: string | null;
+  notes_md: string | null;
+  converted_lead_id: string | null;
+  archived_at: string | null;
+}
+
+export interface LinkedInProspectWithRelations extends LinkedInProspect {
+  owner: ProfileMini | null;
+  campaign: { id: string; name: string } | null;
+}
+
+export interface LinkedInActivity {
+  id: string;
+  org_id: string;
+  prospect_id: string;
+  type: LinkedInActivityType;
+  subject: string | null;
+  body: string | null;
+  occurred_at: string;
+  created_by: string | null;
+  created_at: string;
+  author?: ProfileMini | null;
+}
+
+export interface LinkedInMessageTemplate {
+  id: string;
+  org_id: string;
+  name: string;
+  category: LinkedInTemplateCategory;
+  body: string;
+  variables: string[];
+  active: boolean;
+  created_by: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface LinkedInMessage {
+  id: string;
+  org_id: string;
+  prospect_id: string;
+  template_id: string | null;
+  direction: "out" | "in";
+  status: "draft" | "sent" | "received";
+  body: string;
+  sent_at: string | null;
+  created_by: string | null;
+  updated_by: string | null;
+  deleted_at: string | null;
+  created_at: string;
+  updated_at: string;
 }

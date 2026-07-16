@@ -79,6 +79,7 @@ export const MAIN_NAV: NavItem[] = [
       { label: "Dashboard", href: "/sales/lead-engine" },
       { label: "Leads", href: "/sales/leads" },
       { label: "Pipeline", href: "/sales/pipeline" },
+      { label: "LinkedIn Sales", href: "/sales/linkedin" },
       { label: "Website Audits", href: "/sales/audits" },
       { label: "Follow-ups", href: "/sales/followups" },
       { label: "Aktivitaeten", href: "/sales/activities" },

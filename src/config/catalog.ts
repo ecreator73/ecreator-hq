@@ -97,6 +97,74 @@ export const LEAD_STATUSES = [
   { key: "andere", label: "Andere", color: "gray" },
 ] as const satisfies readonly CatalogEntry[];
 
+/* Phase 19 - LinkedIn Sales: Prospect-Status (TS-Spiegel des DB-Seeds 0021) */
+export const LINKEDIN_PROSPECT_STATUSES = [
+  { key: "neu", label: "Neu", color: "blue", isDefault: true },
+  { key: "zu_recherchieren", label: "Zu recherchieren", color: "gray" },
+  { key: "kontaktanfrage_gesendet", label: "Kontaktanfrage gesendet", color: "blue" },
+  { key: "verbunden", label: "Verbunden", color: "blue" },
+  { key: "erste_nachricht_gesendet", label: "Erste Nachricht gesendet", color: "blue" },
+  { key: "antwort_erhalten", label: "Antwort erhalten", color: "amber" },
+  { key: "termin_vereinbart", label: "Termin vereinbart", color: "green" },
+  { key: "angebot", label: "Angebot", color: "amber" },
+  { key: "gewonnen", label: "Gewonnen", color: "green" },
+  { key: "verloren", label: "Verloren", color: "red" },
+  { key: "nicht_interessiert", label: "Nicht interessiert", color: "gray" },
+  { key: "spaeter_kontaktieren", label: "Spaeter erneut kontaktieren", color: "amber" },
+] as const satisfies readonly CatalogEntry[];
+
+/** Abgeschlossene Prospect-Status (keine Follow-up-Pflicht, nicht in Pipeline). */
+export const LINKEDIN_TERMINAL_STATUSES = ["gewonnen", "verloren", "nicht_interessiert"] as const;
+
+export const LINKEDIN_CAMPAIGN_STATUSES = [
+  { key: "active", label: "Aktiv", color: "green", isDefault: true },
+  { key: "paused", label: "Pausiert", color: "amber" },
+  { key: "archived", label: "Archiviert", color: "gray" },
+] as const satisfies readonly CatalogEntry[];
+
+export const LINKEDIN_ACTIVITY_TYPES = [
+  { key: "kontaktanfrage", label: "Kontaktanfrage" },
+  { key: "nachricht", label: "Nachricht" },
+  { key: "antwort", label: "Antwort" },
+  { key: "telefonat", label: "Telefonat" },
+  { key: "meeting", label: "Meeting" },
+  { key: "angebot", label: "Angebot" },
+  { key: "notiz", label: "Notiz" },
+  { key: "vertrag", label: "Vertrag" },
+  { key: "status", label: "Statuswechsel" },
+  { key: "system", label: "System" },
+] as const;
+export const LINKEDIN_ACTIVITY_TYPE_KEYS = LINKEDIN_ACTIVITY_TYPES.map((t) => t.key) as [
+  (typeof LINKEDIN_ACTIVITY_TYPES)[number]["key"],
+  ...(typeof LINKEDIN_ACTIVITY_TYPES)[number]["key"][],
+];
+export const LINKEDIN_ACTIVITY_TYPE_LABELS = Object.fromEntries(
+  LINKEDIN_ACTIVITY_TYPES.map((t) => [t.key, t.label]),
+) as Record<(typeof LINKEDIN_ACTIVITY_TYPE_KEYS)[number], string>;
+
+export const LINKEDIN_TEMPLATE_CATEGORIES = [
+  { key: "erste_kontaktanfrage", label: "Erste Kontaktanfrage" },
+  { key: "nach_annahme", label: "Nach Annahme" },
+  { key: "followup", label: "Follow-up" },
+  { key: "nach_gespraech", label: "Nach Gespraech" },
+  { key: "nach_angebot", label: "Nach Angebot" },
+  { key: "reaktivierung", label: "Reaktivierung" },
+] as const;
+export const LINKEDIN_TEMPLATE_CATEGORY_KEYS = LINKEDIN_TEMPLATE_CATEGORIES.map((t) => t.key) as [
+  (typeof LINKEDIN_TEMPLATE_CATEGORIES)[number]["key"],
+  ...(typeof LINKEDIN_TEMPLATE_CATEGORIES)[number]["key"][],
+];
+
+export const LINKEDIN_PRIORITIES = [
+  { key: "low", label: "Niedrig" },
+  { key: "medium", label: "Mittel" },
+  { key: "high", label: "Hoch" },
+] as const;
+export const LINKEDIN_PRIORITY_KEYS = LINKEDIN_PRIORITIES.map((t) => t.key) as [
+  (typeof LINKEDIN_PRIORITIES)[number]["key"],
+  ...(typeof LINKEDIN_PRIORITIES)[number]["key"][],
+];
+
 export const MEETING_STATUSES = [
   { key: "planned", label: "Geplant", color: "gray", isDefault: true },
   { key: "completed", label: "Durchgefuehrt", color: "green" },
@@ -281,6 +349,7 @@ export const OFFER_STATUS_KEYS = keysOf(OFFER_STATUSES);
 export const CONTRACT_STATUS_KEYS = keysOf(CONTRACT_STATUSES);
 export const TASK_STATUS_KEYS = keysOf(TASK_STATUSES);
 export const LEAD_STATUS_KEYS = keysOf(LEAD_STATUSES);
+export const LINKEDIN_PROSPECT_STATUS_KEYS = keysOf(LINKEDIN_PROSPECT_STATUSES);
 export const MEETING_STATUS_KEYS = keysOf(MEETING_STATUSES);
 export const REPORTING_CALL_STATUS_KEYS = keysOf(REPORTING_CALL_STATUSES);
 
@@ -303,6 +372,10 @@ export type OfferStatus = (typeof OFFER_STATUS_KEYS)[number];
 export type ContractStatus = (typeof CONTRACT_STATUS_KEYS)[number];
 export type TaskStatus = (typeof TASK_STATUS_KEYS)[number];
 export type LeadStatus = (typeof LEAD_STATUS_KEYS)[number];
+export type LinkedInProspectStatus = (typeof LINKEDIN_PROSPECT_STATUS_KEYS)[number];
+export type LinkedInPriority = (typeof LINKEDIN_PRIORITY_KEYS)[number];
+export type LinkedInTemplateCategory = (typeof LINKEDIN_TEMPLATE_CATEGORY_KEYS)[number];
+export type LinkedInActivityType = (typeof LINKEDIN_ACTIVITY_TYPE_KEYS)[number];
 export type MeetingStatus = (typeof MEETING_STATUS_KEYS)[number];
 export type ReportingCallStatus = (typeof REPORTING_CALL_STATUS_KEYS)[number];
 
@@ -327,6 +400,8 @@ export const STATUS_REGISTRY = {
   invoice: buildMap(INVOICE_STATUSES),
   outreach_message: buildMap(OUTREACH_MESSAGE_STATUSES),
   booked_meeting: buildMap(BOOKED_MEETING_STATUSES),
+  linkedin_prospect: buildMap(LINKEDIN_PROSPECT_STATUSES),
+  linkedin_campaign: buildMap(LINKEDIN_CAMPAIGN_STATUSES),
   proposal: buildMap(PROPOSAL_STATUSES),
 } as const;
 
@@ -445,6 +520,8 @@ export const LEAD_SOURCES = [
   { key: "event", label: "Event" },
   { key: "social", label: "Social Media" },
   { key: "website", label: "Website" },
+  { key: "linkedin", label: "LinkedIn" },
+  { key: "meta_ads", label: "Meta Ads" },
   { key: "other", label: "Sonstige" },
 ] as const;
 export const LEAD_SOURCE_KEYS = LEAD_SOURCES.map((t) => t.key) as [
