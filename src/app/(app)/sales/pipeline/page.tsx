@@ -1,17 +1,18 @@
 import type { Metadata } from "next";
 import { leadsService } from "@/server/services";
-import { LeadPipeline } from "@/components/sales/lead-pipeline";
+import { LeadsFullTable } from "@/components/sales/leads-full-table";
 import type { LeadWithRelations } from "@/types/entities";
 
-export const metadata: Metadata = { title: "Sales - Pipeline" };
+export const metadata: Metadata = { title: "Leads - Tabelle" };
 
-export default async function SalesPipelinePage() {
-  let leads: LeadWithRelations[] = [];
-  try {
-    leads = await leadsService.board();
-  } catch {
-    // Demo-Modus / keine DB -> leere Pipeline
-    leads = [];
-  }
-  return <LeadPipeline leads={leads} />;
+/**
+ * Vollstaendige Lead-Tabelle: alle erfassten Felder in einer Ansicht,
+ * sortierbar/filterbar und als CSV exportierbar.
+ */
+export default async function LeadsTablePage() {
+  const leads: LeadWithRelations[] = await leadsService
+    .board()
+    .catch(() => [] as LeadWithRelations[]);
+
+  return <LeadsFullTable leads={leads} />;
 }

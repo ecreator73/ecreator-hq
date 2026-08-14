@@ -72,8 +72,7 @@ export const MAIN_NAV: NavItem[] = [
     children: [
       { label: "Dashboard", href: "/leads" },
       { label: "Alle Leads", href: "/sales/leads" },
-      { label: "Pipeline", href: "/sales/pipeline" },
-      { label: "LinkedIn", href: "/sales/linkedin" },
+      { label: "Tabelle", href: "/sales/pipeline" },
       { label: "Follow-ups", href: "/sales/followups" },
     ],
   },
