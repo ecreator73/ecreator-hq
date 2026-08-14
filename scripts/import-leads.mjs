@@ -112,9 +112,8 @@ async function main() {
     const campaign_name = clean(meta.campaign_name);
     const dienstleistung = clean(meta.dienstleistung);
     const city = clean(meta.city) ?? clean(meta.kanton);
-    if (dienstleistung && (!notes || !notes.toLowerCase().includes(dienstleistung.toLowerCase()))) {
-      notes = (notes ? notes + "\n" : "") + `Dienstleistung: ${dienstleistung}`;
-    }
+    // Dienstleistung hat eine eigene Spalte - NICHT zusaetzlich in die Notiz
+    // schreiben (sonst steht sie doppelt in der Liste).
     const owner_id = assigned_to_email ? (profByEmail.get(assigned_to_email.toLowerCase()) ?? null) : null;
     if (owner_id) report.ownerMatched++;
     const next_action_date = FOLLOWUP_STATUSES.has(statusKey) ? tomorrowISO() : null;

@@ -187,7 +187,7 @@ export function LeadsTable({
                 <th className="px-4 py-2.5 font-medium">E-Mail</th>
                 <th className="px-4 py-2.5 font-medium">Telefon</th>
                 <SortHeader label="Firma" col="company_name" sp={sp} onClick={toggleSort} className="w-[20rem] min-w-[18rem]" />
-                <th className="px-4 py-2.5 font-medium">Dienstleistung</th>
+                <th className="w-[15rem] min-w-[13rem] px-4 py-2.5 font-medium">Dienstleistung</th>
                 <th className="px-4 py-2.5 font-medium">Quelle</th>
                 <th className="px-4 py-2.5 font-medium">Kampagne</th>
                 <th className="px-4 py-2.5 font-medium">Status</th>
@@ -214,8 +214,9 @@ export function LeadsTable({
                       {l.phone ? <a href={`tel:${l.phone}`} className="hover:text-brand-700">{l.phone}</a> : <span className="text-neutral-300">-</span>}
                     </td>
                     <td className="w-[20rem] min-w-[18rem] px-4 py-2.5 text-neutral-700">{l.company_name}</td>
-                    <td className="max-w-[14rem] px-4 py-2.5 text-neutral-600">
-                      <span className="block truncate" title={l.dienstleistung ?? undefined}>{l.dienstleistung ?? "-"}</span>
+                    {/* Vollstaendig lesbar: kleinere Schrift, bricht bei Bedarf um. */}
+                    <td className="w-[15rem] min-w-[13rem] px-4 py-2.5 text-neutral-600">
+                      <span className="block text-xs leading-snug break-words">{l.dienstleistung ?? "-"}</span>
                     </td>
                     <td className="px-4 py-2.5 text-neutral-600">{srcLabel(l.source)}</td>
                     <td className="max-w-[12rem] px-4 py-2.5 text-neutral-600">
