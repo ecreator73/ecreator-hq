@@ -1,6 +1,13 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { contractsService, clientsService } from "@/server/services";
+import {
+  contractsService,
+  clientsService,
+  documentItemsService,
+  itemTotal,
+  sumItems,
+} from "@/server/services";
+import { ItemsEditor } from "@/components/documents/items-editor";
 import {
   DocumentShell,
   PositionsTable,
@@ -29,17 +36,24 @@ export default async function ContractDocumentPage({
   const contract = await contractsService.getById(id).catch(() => null);
   if (!contract) notFound();
 
-  const client = contract.client_id
-    ? await clientsService.getById(contract.client_id).catch(() => null)
-    : null;
+  const [client, items] = await Promise.all([
+    contract.client_id
+      ? clientsService.getById(contract.client_id).catch(() => null)
+      : Promise.resolve(null),
+    documentItemsService.listForContract(contract.id).catch(() => []),
+  ]);
 
-  const monthly = contract.value_monthly ?? 0;
+  const sums = sumItems(items);
+  const hasItems = items.length > 0;
+  // Mit Positionen zaehlen deren Summen, sonst der am Vertrag erfasste Betrag.
+  const monthly = hasItems ? sums.monthly : (contract.value_monthly ?? 0);
+  const once = hasItems ? sums.once : 0;
   const total = contract.value_total ?? 0;
   const isMonthly = monthly > 0;
-  const amount = isMonthly ? monthly : total;
+  const amount = isMonthly ? monthly : hasItems ? once : total;
   const priceLabel = isMonthly
     ? `${formatCHF(monthly, contract.currency)}/Monat`
-    : formatCHF(total, contract.currency);
+    : formatCHF(amount, contract.currency);
 
   // Zahlungsbedingungen: Standardtext + Laufzeit/Startdatum aus dem Vertrag.
   const terms: string[] = [companyInfo.paymentTerms];
@@ -73,22 +87,48 @@ export default async function ContractDocumentPage({
 
       <div className="mt-6">
         <PositionsTable
-          rows={[
-            {
-              description: contract.title,
-              detail: typeLabel(contract.contract_type),
-              qty: "1,00",
-              unitPrice: priceLabel,
-              total: priceLabel,
-            },
-          ]}
-        />
-        <TotalLine
-          label={
-            isMonthly ? "Monatlicher Betrag (exkl. MwSt)" : "Gesamtbetrag (exkl. MwSt)"
+          rows={
+            hasItems
+              ? items.map((i) => ({
+                  description: i.description,
+                  detail: i.detail,
+                  qty: Number(i.quantity).toLocaleString("de-CH", {
+                    minimumFractionDigits: 2,
+                  }),
+                  unitPrice: `${formatCHF(i.unit_price, contract.currency)}${i.recurring ? "/Monat" : ""}`,
+                  total: `${formatCHF(itemTotal(i), contract.currency)}${i.recurring ? "/Monat" : ""}`,
+                }))
+              : [
+                  {
+                    description: contract.title,
+                    detail: typeLabel(contract.contract_type),
+                    qty: "1,00",
+                    unitPrice: priceLabel,
+                    total: priceLabel,
+                  },
+                ]
           }
-          value={formatCHF(amount, contract.currency)}
         />
+        {/* Bei gemischten Positionen beide Summen ausweisen. */}
+        {hasItems && once > 0 && monthly > 0 ? (
+          <>
+            <TotalLine
+              label="Einmalig (exkl. MwSt)"
+              value={formatCHF(once, contract.currency)}
+            />
+            <TotalLine
+              label="Monatlicher Betrag (exkl. MwSt)"
+              value={formatCHF(monthly, contract.currency)}
+            />
+          </>
+        ) : (
+          <TotalLine
+            label={
+              isMonthly ? "Monatlicher Betrag (exkl. MwSt)" : "Gesamtbetrag (exkl. MwSt)"
+            }
+            value={formatCHF(amount, contract.currency)}
+          />
+        )}
         {isMonthly && total > 0 ? (
           <p className="mt-1 text-right text-xs text-neutral-500">
             Gesamtwert ueber die Laufzeit: {formatCHF(total, contract.currency)}
@@ -114,6 +154,11 @@ export default async function ContractDocumentPage({
       </p>
 
       <SignatureBlock customerName={client?.name} />
+
+      {/* Positionen bearbeiten - nur am Bildschirm, nicht im Druck */}
+      <div className="mt-10">
+        <ItemsEditor items={items} contractId={contract.id} currency={contract.currency} />
+      </div>
     </DocumentShell>
   );
 }

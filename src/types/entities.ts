@@ -1701,6 +1701,26 @@ export interface AssistantAnswer {
   items: AssistantAnswerItem[];
 }
 
+/** Position einer Offerte bzw. eines Vertrags. */
+export interface DocumentItem {
+  id: string;
+  org_id: string;
+  offer_id: string | null;
+  contract_id: string | null;
+  description: string;
+  detail: string | null;
+  quantity: number;
+  /** Einzelpreis in Rappen. */
+  unit_price: number;
+  /** true = monatlich wiederkehrend, false = einmalig. */
+  recurring: boolean;
+  sort_order: number;
+  created_by: string | null;
+  updated_by: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
 /* --------------------------------------------------------------------------
  * Phase 19 - LinkedIn Sales
  * ------------------------------------------------------------------------ */

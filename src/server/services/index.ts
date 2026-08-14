@@ -138,6 +138,15 @@ export {
 } from "./growth-engine.service";
 export { importService } from "./import.service";
 export {
+  documentItemsService,
+  itemTotal,
+  sumItems,
+} from "./document-items.service";
+export type {
+  DocumentItemCreateInput,
+  DocumentItemUpdateInput,
+} from "./document-items.service";
+export {
   linkedinCampaignsService,
   linkedinProspectsService,
   linkedinActivitiesService,

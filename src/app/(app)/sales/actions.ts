@@ -12,12 +12,17 @@ import {
   salesDashboardService,
   clientsService,
   teamService,
+  documentItemsService,
 } from "@/server/services";
 import type { LeadCreateInput, LeadUpdateInput } from "@/lib/validation/leads";
 import type { SalesActivityCreateInput } from "@/lib/validation/sales-activities";
 import type { MeetingCreateInput } from "@/lib/validation/meetings";
 import type { OfferCreateInput, OfferUpdateInput } from "@/lib/validation/offers";
 import type { ContractCreateInput } from "@/lib/validation/contracts";
+import type {
+  DocumentItemCreateInput,
+  DocumentItemUpdateInput,
+} from "@/server/services";
 
 export type ActionResult<T = undefined> =
   | { ok: true; data?: T }
@@ -247,5 +252,50 @@ export async function salesFormOptionsAction(): Promise<
     return { ok: true, data: { clients, users, leads: leadRows } };
   } catch (e) {
     return fail(e);
+  }
+}
+
+/* ------------------------------------------------------------------------
+ * Positionen (Offerte / Vertrag)
+ * ---------------------------------------------------------------------- */
+
+export async function createDocumentItemAction(
+  input: DocumentItemCreateInput,
+): Promise<ActionResult> {
+  try {
+    await requireUser();
+    await documentItemsService.create(input);
+    revalidatePath("/sales/offers", "layout");
+    revalidatePath("/sales/contracts", "layout");
+    return { ok: true };
+  } catch (e) {
+    return { ok: false, error: e instanceof Error ? e.message : "Unbekannter Fehler" };
+  }
+}
+
+export async function updateDocumentItemAction(
+  id: string,
+  input: DocumentItemUpdateInput,
+): Promise<ActionResult> {
+  try {
+    await requireUser();
+    await documentItemsService.update(id, input);
+    revalidatePath("/sales/offers", "layout");
+    revalidatePath("/sales/contracts", "layout");
+    return { ok: true };
+  } catch (e) {
+    return { ok: false, error: e instanceof Error ? e.message : "Unbekannter Fehler" };
+  }
+}
+
+export async function deleteDocumentItemAction(id: string): Promise<ActionResult> {
+  try {
+    await requireUser();
+    await documentItemsService.remove(id);
+    revalidatePath("/sales/offers", "layout");
+    revalidatePath("/sales/contracts", "layout");
+    return { ok: true };
+  } catch (e) {
+    return { ok: false, error: e instanceof Error ? e.message : "Unbekannter Fehler" };
   }
 }

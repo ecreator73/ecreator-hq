@@ -1,6 +1,14 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { offersService, clientsService, leadsService } from "@/server/services";
+import {
+  offersService,
+  clientsService,
+  leadsService,
+  documentItemsService,
+  itemTotal,
+  sumItems,
+} from "@/server/services";
+import { ItemsEditor } from "@/components/documents/items-editor";
 import {
   DocumentShell,
   PositionsTable,
@@ -29,14 +37,18 @@ export default async function OfferDocumentPage({
   if (!offer) notFound();
 
   // Empfaenger: Kunde oder (falls die Offerte an einen Lead geht) der Lead.
-  const [client, lead] = await Promise.all([
+  const [client, lead, items] = await Promise.all([
     offer.client_id
       ? clientsService.getById(offer.client_id).catch(() => null)
       : Promise.resolve(null as Client | null),
     offer.lead_id
       ? leadsService.getById(offer.lead_id).catch(() => null)
       : Promise.resolve(null as LeadWithRelations | null),
+    documentItemsService.listForOffer(offer.id).catch(() => []),
   ]);
+
+  const sums = sumItems(items);
+  const hasItems = items.length > 0;
 
   const recipientName =
     client?.name ?? lead?.company_name ?? lead?.contact_name ?? "Empfaenger";
@@ -44,7 +56,7 @@ export default async function OfferDocumentPage({
     ? [client.address, client.city, client.country]
     : [lead?.contact_name, lead?.city, lead?.email];
 
-  const amount = offer.amount ?? 0;
+  const amount = hasItems ? sums.total : (offer.amount ?? 0);
   const price = formatCHF(amount, offer.currency);
 
   return (
@@ -72,17 +84,42 @@ export default async function OfferDocumentPage({
 
       <div className="mt-6">
         <PositionsTable
-          rows={[
-            {
-              description: offer.title,
-              detail: typeLabel(offer.offer_type),
-              qty: "1,00",
-              unitPrice: price,
-              total: price,
-            },
-          ]}
+          rows={
+            hasItems
+              ? items.map((i) => ({
+                  description: i.description,
+                  detail: i.detail,
+                  qty: Number(i.quantity).toLocaleString("de-CH", {
+                    minimumFractionDigits: 2,
+                  }),
+                  unitPrice: `${formatCHF(i.unit_price, offer.currency)}${i.recurring ? "/Monat" : ""}`,
+                  total: `${formatCHF(itemTotal(i), offer.currency)}${i.recurring ? "/Monat" : ""}`,
+                }))
+              : [
+                  {
+                    description: offer.title,
+                    detail: typeLabel(offer.offer_type),
+                    qty: "1,00",
+                    unitPrice: price,
+                    total: price,
+                  },
+                ]
+          }
         />
-        <TotalLine label="Gesamtbetrag (exkl. MwSt)" value={price} />
+        {hasItems && sums.once > 0 && sums.monthly > 0 ? (
+          <>
+            <TotalLine
+              label="Einmalig (exkl. MwSt)"
+              value={formatCHF(sums.once, offer.currency)}
+            />
+            <TotalLine
+              label="Monatlich (exkl. MwSt)"
+              value={formatCHF(sums.monthly, offer.currency)}
+            />
+          </>
+        ) : (
+          <TotalLine label="Gesamtbetrag (exkl. MwSt)" value={price} />
+        )}
       </div>
 
       <section className="mt-8 print-keep">
@@ -102,6 +139,11 @@ export default async function OfferDocumentPage({
       </p>
 
       <SignatureBlock customerName={client?.name ?? lead?.company_name} />
+
+      {/* Positionen bearbeiten - nur am Bildschirm, nicht im Druck */}
+      <div className="mt-10">
+        <ItemsEditor items={items} offerId={offer.id} currency={offer.currency} />
+      </div>
     </DocumentShell>
   );
 }
