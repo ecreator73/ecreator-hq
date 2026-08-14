@@ -4,6 +4,8 @@ import { PageHeader } from "@/components/page-header";
 import { EmptyState } from "@/components/ui/empty-state";
 import { StatusBadge } from "@/components/tasks/status-badge";
 import { MeetingQuickCreate } from "@/components/sales/meeting-quick-create";
+import { MeetingCalendarActions } from "@/components/sales/meeting-calendar-actions";
+import { CalendarSubscribeCard } from "@/components/sales/calendar-subscribe-card";
 import { STATUS_REGISTRY, statusLabel } from "@/config/catalog";
 import { formatDate } from "@/lib/utils";
 import type { SalesMeetingRow } from "@/types/entities";
@@ -48,6 +50,7 @@ export default async function MeetingsPage() {
                 <th className="px-4 py-2.5 font-medium">Datum</th>
                 <th className="px-4 py-2.5 font-medium">Dauer</th>
                 <th className="px-4 py-2.5 font-medium">Status</th>
+                <th className="px-4 py-2.5 font-medium">Kalender</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-neutral-100">
@@ -73,12 +76,27 @@ export default async function MeetingsPage() {
                       color={meetingStatusColor(m.status)}
                     />
                   </td>
+                  <td className="px-4 py-2.5">
+                    {m.meeting_date ? (
+                      <MeetingCalendarActions
+                        id={m.id}
+                        title={m.title}
+                        date={m.meeting_date}
+                        durationMinutes={m.duration_minutes}
+                        notes={m.notes}
+                      />
+                    ) : (
+                      <span className="text-xs text-neutral-300">Kein Datum</span>
+                    )}
+                  </td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
       )}
+
+      <CalendarSubscribeCard />
     </div>
   );
 }

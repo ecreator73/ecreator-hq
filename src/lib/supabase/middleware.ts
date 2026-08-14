@@ -11,7 +11,13 @@ import {
  * werden von externen Servern OHNE Session aufgerufen und duerfen daher nicht
  * auf /login umgeleitet werden.
  */
-const PUBLIC_PATHS = ["/login", "/api/webhooks", "/api/cron"];
+const PUBLIC_PATHS = [
+  "/login",
+  "/api/webhooks",
+  "/api/cron",
+  // Kalender-Feed: Google/Outlook rufen ihn ohne Session ab (Token-geschuetzt).
+  "/api/calendar",
+];
 
 function isPublicPath(pathname: string): boolean {
   return PUBLIC_PATHS.some(
