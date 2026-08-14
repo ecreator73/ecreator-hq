@@ -235,11 +235,17 @@ export const metaService = {
     const metaFields = {
       external_lead_id: n.external_lead_id, form_id: n.form_id, form_name: n.form_name,
       ad_id: n.ad_id, ad_name: n.ad_name, adset_id: n.adset_id, adset_name: n.adset_name,
-      campaign_id: n.campaign_id, campaign_name: n.campaign_name, metadata_json: n.metadata_json,
+      campaign_id: n.campaign_id, campaign_name: n.campaign_name,
+      dienstleistung: n.dienstleistung, metadata_json: n.metadata_json,
     };
 
     if (dupId) {
-      await db.from("leads").update(metaFields).eq("id", dupId);
+      // Nur gefuellte Werte uebernehmen - ein leeres Feld im neuen Payload darf
+      // vorhandene Daten am bestehenden Lead nicht loeschen.
+      const patch = Object.fromEntries(
+        Object.entries(metaFields).filter(([, v]) => v !== null && v !== undefined),
+      );
+      await db.from("leads").update(patch).eq("id", dupId);
       await db.from("sales_activities").insert({
         lead_id: dupId, type: "note", subject: "Lead ueber Meta Ads eingegangen (erneut)",
         body: `Kampagne: ${n.campaign_name ?? "-"} · Formular: ${n.form_name ?? n.form_id ?? "-"} · ${new Date().toISOString().slice(0, 16).replace("T", " ")}`,

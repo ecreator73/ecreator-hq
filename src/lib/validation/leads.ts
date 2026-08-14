@@ -22,6 +22,8 @@ export const leadInsertSchema = z.object({
   city: f.optionalText(120),
   country: f.optionalText(120),
   source: z.enum(LEAD_SOURCE_KEYS).nullish(),
+  /** Freitext aus dem Formular: was der Interessent macht/anbietet. */
+  dienstleistung: f.optionalText(300),
   estimated_value: f.optionalRappen,
   currency: f.currency,
   status: z.enum(LEAD_STATUS_KEYS).optional(),

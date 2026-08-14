@@ -112,6 +112,18 @@ export function normalizeZapierLead(
       adset_name: pick(f, "adset_name", "adsetname", "anzeigengruppe"),
       campaign_id: pick(f, "campaign_id", "campaignid"),
       campaign_name: pick(f, "campaign_name", "campaignname", "kampagne"),
+      // Freitextfeld aus dem Formular: was der Interessent macht/anbietet.
+      dienstleistung: pick(
+        f,
+        "dienstleistung",
+        "dienstleistungen",
+        "service",
+        "services",
+        "leistung",
+        "leistungen",
+        "was_machen_sie",
+        "taetigkeit",
+      ),
       created_at: pick(f, "created_time", "createdtime", "created_at", "datum"),
       metadata_json: {
         provider: "zapier",

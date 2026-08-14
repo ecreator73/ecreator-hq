@@ -17,6 +17,8 @@ export interface NormalizedLead {
   adset_name: string | null;
   campaign_id: string | null;
   campaign_name: string | null;
+  /** Freitext aus dem Formular: was der Interessent macht/anbietet. */
+  dienstleistung: string | null;
   created_at: string | null;
   /** Vollstaendige Rohdaten + alle (auch unbekannten) Formularfelder. */
   metadata_json: Record<string, unknown>;
@@ -71,6 +73,15 @@ export function normalizeMetaLead(
     adset_name: raw.adset_name ?? null,
     campaign_id: raw.campaign_id ?? null,
     campaign_name: raw.campaign_name ?? null,
+    dienstleistung: pick(
+      fields,
+      "dienstleistung",
+      "dienstleistungen",
+      "service",
+      "services",
+      "leistung",
+      "branche_dienstleistung",
+    ),
     created_at: raw.created_time ?? null,
     metadata_json: {
       provider: "meta",

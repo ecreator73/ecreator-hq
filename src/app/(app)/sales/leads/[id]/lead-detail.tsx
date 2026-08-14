@@ -632,6 +632,7 @@ function OverviewTab({
             <EditableField lead={lead} field="phone" label="Telefon" value={lead.phone} />
             <EditableField lead={lead} field="website" label="Website" value={lead.website} />
             <EditableField lead={lead} field="industry" label="Branche" value={lead.industry} />
+            <EditableField lead={lead} field="dienstleistung" label="Dienstleistung" value={lead.dienstleistung ?? null} />
             <EditableField lead={lead} field="city" label="Standort" value={lead.city} />
             <EditableField lead={lead} field="source" label="Quelle" value={lead.source} kind="select" selectOptions={sourceOptions} display={sourceLabel(lead.source)} />
             <EditableField lead={lead} field="status" label="Status" value={lead.status?.key} kind="status" selectOptions={statusOptions} display={lead.status?.label} />
