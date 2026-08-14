@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { FileText } from "lucide-react";
 import { offersService, salesDashboardService } from "@/server/services";
 import type { SalesDashboardData } from "@/server/services";
@@ -85,7 +86,14 @@ export default async function SalesOffersPage() {
                     className="border-b border-neutral-50 last:border-0 hover:bg-neutral-50/60"
                   >
                     <td className="px-5 py-3 font-medium text-neutral-900">
-                      {o.title}
+                      <Link
+                        href={`/sales/offers/${o.id}`}
+                        className="inline-flex items-center gap-1.5 text-brand-700 hover:underline"
+                        title="Offerte oeffnen (druckbar als PDF)"
+                      >
+                        {o.title}
+                        <FileText className="h-3.5 w-3.5 text-neutral-300" />
+                      </Link>
                     </td>
                     <td className="px-5 py-3 text-neutral-600">
                       {o.offer_type

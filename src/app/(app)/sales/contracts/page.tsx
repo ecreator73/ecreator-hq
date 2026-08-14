@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { FileSignature } from "lucide-react";
 import {
   contractsService,
   salesDashboardService,
@@ -133,7 +134,16 @@ export default async function ContractsPage() {
                       nameOf(c.client_id)
                     )}
                   </td>
-                  <td className="px-4 py-2.5 text-neutral-500">{c.title}</td>
+                  <td className="px-4 py-2.5 text-neutral-500">
+                    <Link
+                      href={`/sales/contracts/${c.id}`}
+                      className="inline-flex items-center gap-1.5 text-brand-700 hover:underline"
+                      title="Vertrag oeffnen (druckbar als PDF)"
+                    >
+                      {c.title}
+                      <FileSignature className="h-3.5 w-3.5 text-neutral-300" />
+                    </Link>
+                  </td>
                   <td className="px-4 py-2.5 text-neutral-500">
                     {c.contract_type
                       ? CONTRACT_TYPE_LABELS[c.contract_type] ?? c.contract_type

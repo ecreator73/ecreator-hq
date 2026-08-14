@@ -75,3 +75,43 @@
     outline-offset: 2px;
   }
 }
+
+/* --------------------------------------------------------------------------
+ * Druck: Geschaeftsdokumente (Offerte, Vertrag) sauber auf A4 ausgeben.
+ * Die App-Navigation wird ausgeblendet - gedruckt wird nur das Dokument.
+ * ------------------------------------------------------------------------ */
+@media print {
+  @page {
+    size: A4;
+    margin: 16mm;
+  }
+
+  html,
+  body {
+    background: #fff !important;
+  }
+
+  /* Rahmen der Anwendung (Sidebar, Kopfleiste, Bedienelemente) */
+  [data-print-hide] {
+    display: none !important;
+  }
+
+  /* Inhaltsbereich ohne App-Polsterung/Hintergrund */
+  main {
+    padding: 0 !important;
+    background: #fff !important;
+  }
+
+  /* Farben originalgetreu drucken (Logo, Akzente) */
+  * {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  /* Zeilen/Bloecke nicht ueber Seiten zerreissen */
+  tr,
+  li,
+  .print-keep {
+    break-inside: avoid;
+  }
+}

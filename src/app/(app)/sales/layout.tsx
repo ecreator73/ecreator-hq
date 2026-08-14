@@ -10,9 +10,12 @@ export default async function SalesLayout({
   await requireUser();
   return (
     <div className="space-y-6">
-      {/* Kopf + Tabs richten sich nach dem Bereich (Leads oder Sales). */}
-      <SalesAreaHeader action={<LeadQuickCreate />} />
-      <SalesNav />
+      {/* Kopf + Tabs richten sich nach dem Bereich (Leads oder Sales).
+          Beim Drucken von Dokumenten ausgeblendet. */}
+      <div data-print-hide className="space-y-6">
+        <SalesAreaHeader action={<LeadQuickCreate />} />
+        <SalesNav />
+      </div>
       <div>{children}</div>
     </div>
   );

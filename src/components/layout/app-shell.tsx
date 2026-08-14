@@ -47,7 +47,10 @@ export function AppShell({
     <div className="flex min-h-screen flex-col">
       <div className="flex flex-1">
         {/* Desktop-Sidebar */}
-        <aside className="hidden w-64 shrink-0 flex-col border-r border-neutral-200 bg-white lg:flex">
+        <aside
+          data-print-hide
+          className="hidden w-64 shrink-0 flex-col border-r border-neutral-200 bg-white lg:flex"
+        >
           <div className="flex h-16 items-center border-b border-neutral-200 px-4">
             <Brand />
           </div>
@@ -92,7 +95,10 @@ export function AppShell({
 
         {/* Hauptspalte */}
         <div className="flex min-w-0 flex-1 flex-col">
-          <header className="sticky top-0 z-30 flex h-16 items-center justify-between gap-3 border-b border-neutral-200 bg-white/90 px-4 backdrop-blur sm:px-6">
+          <header
+            data-print-hide
+            className="sticky top-0 z-30 flex h-16 items-center justify-between gap-3 border-b border-neutral-200 bg-white/90 px-4 backdrop-blur sm:px-6"
+          >
             <div className="flex items-center gap-2">
               <button
                 type="button"
