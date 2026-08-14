@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { CheckCircle2, ReceiptText } from "lucide-react";
 import {
   Card,
   CardContent,
@@ -8,17 +9,17 @@ import {
 } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
 import { KpiCard } from "@/components/finance/kpi-card";
-import { FinanceChart } from "@/components/finance/finance-chart";
 import { InvoiceQuickCreate } from "@/components/finance/invoice-quick-create";
 import { ExpenseQuickCreate } from "@/components/finance/expense-quick-create";
-import { financeService } from "@/server/services";
+import { expensesService, financeService, invoicesService } from "@/server/services";
 import type {
   FinanceSummary,
-  ForecastMonth,
   FinanceAlert,
-  CustomerValue,
+  Expense,
+  InvoiceWithClient,
 } from "@/types/entities";
-import { formatCHF, cn } from "@/lib/utils";
+import { formatCHF, formatDate, cn } from "@/lib/utils";
+import { isInvoiceOverdue, recurringMonthlyAmount } from "@/lib/finance";
 
 export const metadata: Metadata = { title: "Finance - Dashboard" };
 
@@ -37,6 +38,9 @@ const EMPTY_SUMMARY: FinanceSummary = {
   forecast3Months: 0,
   forecast12Months: 0,
 };
+
+/** Seiten, die nicht mehr im Menue sind - Hinweise duerfen nicht dorthin fuehren. */
+const RETIRED_PAGES = ["/finance/forecast", "/finance/customers", "/finance/reports"];
 
 const ALERT_STYLES: Record<
   FinanceAlert["severity"],
@@ -85,29 +89,60 @@ function AlertRow({ alert }: { alert: FinanceAlert }) {
 
 export default async function FinanceDashboardPage() {
   // Rollen-Guard liegt im finance/layout.tsx (requireRole). Hier nur Daten laden.
-  const [s, fc, al, cv] = await Promise.all([
+  const [s, alerts, openInvoices, recurringCosts] = await Promise.all([
     financeService.summary().catch(() => EMPTY_SUMMARY),
-    financeService.forecast(12).catch((): ForecastMonth[] => []),
     financeService.alerts().catch((): FinanceAlert[] => []),
-    financeService.customerValues().catch((): CustomerValue[] => []),
+    invoicesService
+      .list({ statusIn: ["open", "overdue"] })
+      .catch((): InvoiceWithClient[] => []),
+    expensesService.list({ recurring: true }).catch((): Expense[] => []),
   ]);
 
-  const topClients = cv.slice(0, 5);
+  // Fixkosten je Monat (monatliches Aequivalent aller wiederkehrenden Posten).
+  const monthlyCost = recurringCosts.reduce(
+    (sum, e) => sum + recurringMonthlyAmount(e.amount, e.recurring_frequency),
+    0,
+  );
+
+  // Hinweise, die auf entfernte Seiten zeigen wuerden, verlieren ihren Link.
+  const visibleAlerts: FinanceAlert[] = alerts.map((a) =>
+    a.href && RETIRED_PAGES.includes(a.href) ? { ...a, href: undefined } : a,
+  );
+
+  // Rechnungen sind bereits nach Faelligkeit aufsteigend sortiert.
+  const dueSoon = openInvoices.slice(0, 8);
 
   return (
     <div className="space-y-6">
-      {/* Aktionsleiste */}
+      {/* Was hier haeufig gemacht wird */}
       <div className="flex flex-wrap items-center justify-end gap-2">
         <InvoiceQuickCreate />
         <ExpenseQuickCreate variant="secondary" />
       </div>
 
-      {/* KPI-Cards */}
-      <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
-        <KpiCard label="Umsatz Monat" value={formatCHF(s.monthRevenue)} />
-        <KpiCard label="Umsatz Jahr" value={formatCHF(s.yearRevenue)} />
-        <KpiCard label="MRR" value={formatCHF(s.mrr)} tone="brand" />
-        <KpiCard label="ARR" value={formatCHF(s.arr)} tone="brand" />
+      {/* Die 6 Zahlen, die zaehlen */}
+      <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">
+        <KpiCard
+          label="MRR"
+          value={formatCHF(s.mrr)}
+          sublabel="Wiederkehrend pro Monat"
+          tone="brand"
+          href="/finance/monthly"
+        />
+        <KpiCard
+          label="ARR"
+          value={formatCHF(s.arr)}
+          sublabel="Hochgerechnet aufs Jahr"
+          tone="brand"
+          href="/finance/monthly"
+        />
+        <KpiCard
+          label="Umsatz laufender Monat"
+          value={formatCHF(s.monthRevenue)}
+          sublabel="Bezahlte Rechnungen"
+          tone="green"
+          href="/finance/invoices"
+        />
         <KpiCard
           label="Offene Rechnungen"
           value={s.openInvoicesCount}
@@ -122,117 +157,93 @@ export default async function FinanceDashboardPage() {
           href="/finance/open"
         />
         <KpiCard
-          label="Gewinnschaetzung / Monat"
-          value={formatCHF(s.profitEstimateMonth)}
-          tone={s.profitEstimateMonth >= 0 ? "green" : "red"}
-        />
-        <KpiCard label="Aktive Kunden" value={s.activeClients} />
-      </div>
-
-      {/* Forecast-Zeile */}
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <KpiCard
-          label="Forecast naechster Monat"
-          value={formatCHF(s.forecastNextMonth)}
-          tone="brand"
-        />
-        <KpiCard
-          label="Naechste 3 Monate"
-          value={formatCHF(s.forecast3Months)}
-          tone="brand"
-        />
-        <KpiCard
-          label="Naechste 12 Monate"
-          value={formatCHF(s.forecast12Months)}
-          tone="brand"
+          label="Fixkosten pro Monat"
+          value={formatCHF(monthlyCost)}
+          sublabel="Wiederkehrende Kosten"
+          tone="amber"
+          href="/finance/expenses"
         />
       </div>
 
-      {/* Forecast-Chart */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Forecast (12 Monate)</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <FinanceChart
-            points={fc.map((f) => ({ month: f.month, value: f.revenue }))}
-            label="Prognostizierter Umsatz"
-          />
-        </CardContent>
-      </Card>
-
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        {/* Finance-Alerts */}
+      <div className="grid gap-6 xl:grid-cols-2">
+        {/* Naechste faellige Rechnungen */}
         <Card>
-          <CardHeader>
-            <CardTitle>Finance-Alerts</CardTitle>
+          <CardHeader className="flex flex-row items-center justify-between">
+            <CardTitle>Naechste faellige Rechnungen</CardTitle>
+            <Link
+              href="/finance/open"
+              className="text-xs font-medium text-brand-700 hover:text-brand-800"
+            >
+              Alle offenen Posten
+            </Link>
           </CardHeader>
           <CardContent>
-            {al.length === 0 ? (
+            {dueSoon.length === 0 ? (
               <EmptyState
-                title="Keine Alerts"
-                description="Aktuell gibt es keine ueberfaelligen Rechnungen oder auslaufenden Verträge."
+                icon={ReceiptText}
+                title="Keine offenen Rechnungen"
+                description="Alles bezahlt. Neue Rechnung erfassen, sobald eine Leistung abgerechnet wird."
+                action={<InvoiceQuickCreate />}
               />
             ) : (
-              <div className="space-y-2">
-                {al.map((alert, i) => (
-                  <AlertRow key={`${alert.type}-${i}`} alert={alert} />
-                ))}
-              </div>
+              <ul className="divide-y divide-neutral-100 rounded-lg border border-neutral-200">
+                {dueSoon.map((inv) => {
+                  const overdue = isInvoiceOverdue(inv);
+                  return (
+                    <li key={inv.id}>
+                      <Link
+                        href={`/finance/invoices/${inv.id}`}
+                        className="flex items-start justify-between gap-3 px-4 py-3 text-sm transition-colors hover:bg-neutral-50"
+                      >
+                        <span className="min-w-0">
+                          <span className="block truncate font-medium text-neutral-900">
+                            {inv.title ?? "(ohne Titel)"}
+                          </span>
+                          <span className="mt-0.5 block truncate text-xs text-neutral-500">
+                            {inv.client?.name ?? "Ohne Kunde"}
+                          </span>
+                        </span>
+                        <span className="shrink-0 text-right">
+                          <span className="block font-medium tabular-nums text-neutral-900">
+                            {formatCHF(inv.amount ?? 0)}
+                          </span>
+                          <span
+                            className={cn(
+                              "mt-0.5 block text-xs",
+                              overdue ? "text-red-600" : "text-neutral-500",
+                            )}
+                          >
+                            {inv.due_date
+                              ? `${overdue ? "ueberfaellig seit " : "faellig "}${formatDate(inv.due_date)}`
+                              : "ohne Faelligkeit"}
+                          </span>
+                        </span>
+                      </Link>
+                    </li>
+                  );
+                })}
+              </ul>
             )}
           </CardContent>
         </Card>
 
-        {/* Top Kunden (MRR) */}
+        {/* Was braucht Aufmerksamkeit */}
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle>Top Kunden (MRR)</CardTitle>
-            <Link
-              href="/finance/customers"
-              className="text-xs font-medium text-brand-700 hover:text-brand-800"
-            >
-              Alle Kunden
-            </Link>
+          <CardHeader>
+            <CardTitle>Was braucht Aufmerksamkeit</CardTitle>
           </CardHeader>
           <CardContent>
-            {topClients.length === 0 ? (
+            {visibleAlerts.length === 0 ? (
               <EmptyState
-                title="Keine Kunden"
-                description="Sobald Verträge oder bezahlte Rechnungen erfasst sind, erscheinen hier die wertvollsten Kunden."
+                icon={CheckCircle2}
+                title="Alles im gruenen Bereich"
+                description="Keine ueberfaelligen Rechnungen und keine auslaufenden Vertraege."
               />
             ) : (
-              <div className="overflow-hidden rounded-lg border border-neutral-200">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="border-b border-neutral-200 text-left text-xs uppercase tracking-wide text-neutral-400">
-                      <th className="px-4 py-2.5 font-medium">Kunde</th>
-                      <th className="px-4 py-2.5 text-right font-medium">MRR</th>
-                      <th className="px-4 py-2.5 text-right font-medium">
-                        Gesamtumsatz
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-neutral-100">
-                    {topClients.map((c) => (
-                      <tr key={c.client.id} className="hover:bg-neutral-50">
-                        <td className="px-4 py-2.5">
-                          <Link
-                            href={`/clients/${c.client.id}`}
-                            className="font-medium text-neutral-900 hover:text-brand-700"
-                          >
-                            {c.client.name}
-                          </Link>
-                        </td>
-                        <td className="px-4 py-2.5 text-right font-medium tabular-nums text-brand-700">
-                          {formatCHF(c.mrr)}
-                        </td>
-                        <td className="px-4 py-2.5 text-right tabular-nums text-neutral-700">
-                          {formatCHF(c.totalRevenue)}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+              <div className="space-y-2">
+                {visibleAlerts.map((alert, i) => (
+                  <AlertRow key={`${alert.type}-${i}`} alert={alert} />
+                ))}
               </div>
             )}
           </CardContent>

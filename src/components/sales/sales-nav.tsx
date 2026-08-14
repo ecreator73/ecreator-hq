@@ -4,32 +4,58 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 
-const TABS = [
-  { label: "Dashboard", href: "/sales" },
-  { label: "Lead Engine", href: "/sales/lead-engine" },
-  { label: "Website Audits", href: "/sales/audits" },
-  { label: "Proposals", href: "/sales/proposals" },
-  { label: "Outreach", href: "/sales/outreach" },
-  { label: "Leads", href: "/sales/leads" },
+/**
+ * Der /sales-Bereich beherbergt ZWEI getrennte Arbeitsbereiche:
+ *  - Leads  (neue Kontakte gewinnen)
+ *  - Sales  (Abschluss machen)
+ * Die Tab-Leiste zeigt deshalb je nach Route nur die passenden Punkte -
+ * so bleibt das Menue uebersichtlich, ohne URLs zu brechen.
+ */
+const LEADS_TABS = [
+  { label: "Dashboard", href: "/leads" },
+  { label: "Alle Leads", href: "/sales/leads" },
   { label: "Pipeline", href: "/sales/pipeline" },
-  { label: "Termine", href: "/sales/meetings" },
-  { label: "Angebote", href: "/sales/offers" },
-  { label: "Verträge", href: "/sales/contracts" },
-  { label: "Aktivitaeten", href: "/sales/activities" },
+  { label: "LinkedIn", href: "/sales/linkedin" },
   { label: "Follow-ups", href: "/sales/followups" },
 ];
 
+const SALES_TABS = [
+  { label: "Dashboard", href: "/sales" },
+  { label: "Angebote", href: "/sales/offers" },
+  { label: "Vertraege", href: "/sales/contracts" },
+  { label: "Termine", href: "/sales/meetings" },
+];
+
+/** Routen, die fachlich zum Leads-Bereich gehoeren. */
+const LEADS_PREFIXES = [
+  "/leads",
+  "/sales/leads",
+  "/sales/pipeline",
+  "/sales/linkedin",
+  "/sales/followups",
+];
+
+export function isLeadsArea(pathname: string): boolean {
+  return LEADS_PREFIXES.some(
+    (p) => pathname === p || pathname.startsWith(`${p}/`),
+  );
+}
+
 export function SalesNav() {
   const pathname = usePathname();
+  const leads = isLeadsArea(pathname);
+  const tabs = leads ? LEADS_TABS : SALES_TABS;
+  const exact = leads ? "/leads" : "/sales";
+
   return (
     <nav
-      aria-label="Sales-Ansichten"
+      aria-label={leads ? "Leads-Ansichten" : "Sales-Ansichten"}
       className="-mx-1 flex gap-1 overflow-x-auto border-b border-neutral-200 pb-px"
     >
-      {TABS.map((tab) => {
+      {tabs.map((tab) => {
         const active =
-          tab.href === "/sales"
-            ? pathname === "/sales"
+          tab.href === exact
+            ? pathname === exact
             : pathname === tab.href || pathname.startsWith(`${tab.href}/`);
         return (
           <Link
@@ -48,5 +74,29 @@ export function SalesNav() {
         );
       })}
     </nav>
+  );
+}
+
+/** Kopfzeile des Bereichs - Titel/Beschreibung passend zu Leads bzw. Sales. */
+export function SalesAreaHeader({ action }: { action?: React.ReactNode }) {
+  const pathname = usePathname();
+  const leads = isLeadsArea(pathname);
+  return (
+    <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+      <div className="min-w-0">
+        <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-brand-600">
+          {leads ? "Leads" : "Sales"}
+        </p>
+        <h1 className="text-xl font-semibold tracking-tight text-neutral-900 sm:text-2xl">
+          {leads ? "Leads" : "Sales"}
+        </h1>
+        <p className="mt-1 max-w-2xl text-sm text-neutral-500">
+          {leads
+            ? "Neue Kontakte gewinnen - Leads erfassen, Pipeline pflegen und Follow-ups einhalten."
+            : "Abschluss machen - Angebote, Vertraege und Termine."}
+        </p>
+      </div>
+      {action ? <div className="shrink-0">{action}</div> : null}
+    </div>
   );
 }

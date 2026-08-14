@@ -7,12 +7,9 @@ import { cn } from "@/lib/utils";
 const TABS = [
   { label: "Dashboard", href: "/finance" },
   { label: "Rechnungen", href: "/finance/invoices" },
-  { label: "Offen", href: "/finance/open" },
+  { label: "Offene Posten", href: "/finance/open" },
   { label: "Kosten", href: "/finance/expenses" },
-  { label: "Monatsuebersicht", href: "/finance/monthly" },
-  { label: "Forecast", href: "/finance/forecast" },
-  { label: "Kunden", href: "/finance/customers" },
-  { label: "Reports", href: "/finance/reports" },
+  { label: "Umsatz", href: "/finance/monthly" },
   { label: "Kalender", href: "/finance/calendar" },
 ];
 

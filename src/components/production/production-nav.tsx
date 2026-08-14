@@ -9,12 +9,10 @@ const TABS = [
   { label: "Websites", href: "/production/websites" },
   { label: "Ads", href: "/production/ads" },
   { label: "CRM", href: "/production/crm" },
-  { label: "Content", href: "/production/content" },
   { label: "Shootings", href: "/production/shoots" },
   { label: "Creator Pool", href: "/production/creators" },
   { label: "Assets", href: "/production/assets" },
   { label: "Kalender", href: "/production/calendar" },
-  { label: "Auslastung", href: "/production/workload" },
 ];
 
 export function ProductionNav() {

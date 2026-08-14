@@ -21,6 +21,14 @@ const TABS: { label: string; href: string; roles?: RoleKey[] }[] = [
 
 export function OperationsNav({ userRoles = [] }: { userRoles?: RoleKey[] }) {
   const pathname = usePathname();
+  // Meetings sind ueber "Kunden" erreichbar - dort gehoert die alte
+  // Operations-Tableiste (Wissen/SOPs/Prompts) nicht hin.
+  if (
+    pathname === "/operations/meetings" ||
+    pathname.startsWith("/operations/meetings/")
+  ) {
+    return null;
+  }
   const tabs = TABS.filter((tab) => canAccess(userRoles, tab.roles));
   return (
     <nav

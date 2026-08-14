@@ -1,4 +1,6 @@
 import type { Metadata } from "next";
+import Link from "next/link";
+import { Upload } from "lucide-react";
 import {
   Card,
   CardContent,
@@ -46,6 +48,14 @@ export default async function ClientsListPage({
       <CardHeader className="gap-3">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <CardTitle>Kunden ({clients.length})</CardTitle>
+          <Link
+            href="/clients/import"
+            title="Kunden aus einer Datei importieren"
+            className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-lg px-2.5 text-xs font-medium text-neutral-500 transition-colors hover:bg-neutral-100 hover:text-neutral-800"
+          >
+            <Upload className="h-3.5 w-3.5" aria-hidden="true" />
+            Import
+          </Link>
         </div>
         <ClientsFilterBar
           initialStatus={filters.status ?? ""}

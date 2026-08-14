@@ -71,19 +71,24 @@ export function SidebarNav({
                 "group flex items-center rounded-lg pr-1 transition-colors",
                 headerActive
                   ? "bg-brand-50 text-brand-700"
-                  : "text-neutral-700 hover:bg-neutral-100",
+                  : containsActive
+                    ? "text-neutral-900"
+                    : "text-neutral-700 hover:bg-neutral-100",
               )}
             >
               <Link
                 href={group.href}
                 onClick={onNavigate}
                 aria-current={headerActive ? "page" : undefined}
-                className="flex min-w-0 flex-1 items-center gap-3 px-3 py-2 text-sm font-medium"
+                className={cn(
+                  "flex min-w-0 flex-1 items-center gap-3 px-3 py-2.5 text-sm",
+                  containsActive ? "font-semibold" : "font-medium",
+                )}
               >
                 <Icon
                   className={cn(
                     "h-[18px] w-[18px] shrink-0",
-                    headerActive
+                    headerActive || containsActive
                       ? "text-brand-600"
                       : "text-neutral-400 group-hover:text-neutral-600",
                   )}
@@ -119,10 +124,10 @@ export function SidebarNav({
                         onClick={onNavigate}
                         aria-current={childActive ? "page" : undefined}
                         className={cn(
-                          "block rounded-md px-3 py-1.5 text-sm transition-colors",
+                          "block rounded-md border-l-2 px-3 py-2 text-sm transition-colors",
                           childActive
-                            ? "bg-brand-50 font-medium text-brand-700"
-                            : "text-neutral-500 hover:bg-neutral-100 hover:text-neutral-900",
+                            ? "border-brand-500 bg-brand-50 font-medium text-brand-700"
+                            : "border-transparent text-neutral-500 hover:bg-neutral-100 hover:text-neutral-900",
                         )}
                       >
                         {child.label}

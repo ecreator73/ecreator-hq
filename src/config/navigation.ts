@@ -44,7 +44,7 @@ export interface NavItem {
 /** Rollen-Konstanten (an mehreren Stellen wiederverwendet). */
 export const SALES_ROLES: RoleKey[] = ["super_admin", "ceo", "cso", "sales"];
 export const FINANCE_ROLES: RoleKey[] = ["super_admin", "ceo", "finance"];
-const LEADERSHIP_ROLES: RoleKey[] = ["super_admin", "ceo", "cso"];
+export const LEADERSHIP_ROLES: RoleKey[] = ["super_admin", "ceo", "cso"];
 
 /**
  * Hauptnavigation - die 7 Bereiche der produktionsreifen IA.
@@ -60,65 +60,50 @@ export const MAIN_NAV: NavItem[] = [
     href: "/",
     icon: LayoutDashboard,
     description:
-      "Persoenliches Cockpit: Aufgaben, Meetings, Follow-ups, Pipeline und Alerts fuer heute.",
-    children: [
-      { label: "Executive Dashboard", href: "/executive", roles: LEADERSHIP_ROLES },
-      { label: "Heute", href: "/tasks/today" },
-      { label: "Kalender", href: "/calendar" },
-      { label: "Benachrichtigungen", href: "/notifications" },
-    ],
+      "Alles fuer heute an einem Ort: Aufgaben, Termine, Follow-ups, Zahlen und Benachrichtigungen.",
+    // Bewusst OHNE Unterpunkte: Home zeigt alles direkt auf der Seite.
   },
   {
     label: "Leads",
-    href: "/sales/leads",
+    href: "/leads",
     icon: Radar,
-    description:
-      "Akquise: Lead-Gewinnung, Pipeline, Website-Audits und Follow-ups bis zur Uebergabe an Sales.",
+    description: "Neue Kontakte gewinnen: Leads, Pipeline, LinkedIn und Follow-ups.",
     roles: SALES_ROLES,
     children: [
-      { label: "Dashboard", href: "/sales/lead-engine" },
-      { label: "Leads", href: "/sales/leads" },
+      { label: "Dashboard", href: "/leads" },
+      { label: "Alle Leads", href: "/sales/leads" },
       { label: "Pipeline", href: "/sales/pipeline" },
-      { label: "LinkedIn Sales", href: "/sales/linkedin" },
-      { label: "Website Audits", href: "/sales/audits" },
+      { label: "LinkedIn", href: "/sales/linkedin" },
       { label: "Follow-ups", href: "/sales/followups" },
-      { label: "Aktivitaeten", href: "/sales/activities" },
     ],
   },
   {
     label: "Sales",
     href: "/sales",
     icon: TrendingUp,
-    description:
-      "Verkauf: Angebote, Verträge, Proposals, Outreach-Automatisierung und Termine bis zum Abschluss.",
+    description: "Abschluss machen: Angebote, Vertraege und Termine.",
     roles: SALES_ROLES,
     children: [
       { label: "Dashboard", href: "/sales" },
       { label: "Angebote", href: "/sales/offers" },
-      { label: "Verträge", href: "/sales/contracts" },
-      { label: "Proposal Engine", href: "/sales/proposals" },
-      { label: "Automatisierungen", href: "/sales/outreach" },
-      { label: "E-Mail Vorlagen", href: "/sales/outreach/templates" },
-      { label: "Kampagnen", href: "/sales/outreach/pipeline" },
+      { label: "Vertraege", href: "/sales/contracts" },
       { label: "Termine", href: "/sales/meetings" },
-      { label: "Growth Engine", href: "/operations/growth", roles: LEADERSHIP_ROLES },
     ],
   },
   {
-    label: "Clients",
+    label: "Kunden",
     href: "/clients",
     icon: Users,
     description:
-      "Betreuung von Bestandskunden: Onboarding, Reporting-Calls, Projekte, Aufgaben und Offboarding.",
+      "Bestandskunden betreuen: Onboarding, Reporting-Calls, Projekte und Offboarding.",
     children: [
-      { label: "Kunden", href: "/clients/list" },
+      { label: "Dashboard", href: "/clients" },
+      { label: "Kundenliste", href: "/clients/list" },
       { label: "Onboarding", href: "/clients/onboarding" },
       { label: "Reporting-Calls", href: "/clients/reporting" },
       { label: "Projekte", href: "/clients/projects" },
-      { label: "Aufgaben", href: "/tasks" },
-      { label: "Aktivitaeten", href: "/clients/activities" },
-      { label: "Offboarding", href: "/clients/offboarding" },
       { label: "Meetings", href: "/operations/meetings" },
+      { label: "Offboarding", href: "/clients/offboarding" },
     ],
   },
   {
@@ -126,14 +111,13 @@ export const MAIN_NAV: NavItem[] = [
     href: "/production",
     icon: Factory,
     description:
-      "Lieferung aller Leistungen: Projekte, Content, Websites, CRM-Builds, Ads, Drehs, Creator-Pool und Assets.",
+      "Leistungen liefern: Projekte, Webseiten, Ads, CRM-Builds, Shootings, Creator und Assets.",
     children: [
       { label: "Dashboard", href: "/production" },
       { label: "Projekte", href: "/production/projects" },
-      { label: "Content Produktionen", href: "/production/content" },
       { label: "Webseiten", href: "/production/websites" },
-      { label: "CRM Builds", href: "/production/crm" },
       { label: "Ads", href: "/production/ads" },
+      { label: "CRM Builds", href: "/production/crm" },
       { label: "Shootings", href: "/production/shoots" },
       { label: "Creator Pool", href: "/production/creators" },
       { label: "Assets", href: "/production/assets" },
@@ -143,15 +127,13 @@ export const MAIN_NAV: NavItem[] = [
     label: "Finance",
     href: "/finance",
     icon: Wallet,
-    description:
-      "Rechnungen, Umsatz, wiederkehrende Umsaetze (MRR), Forecast und Kosten.",
+    description: "Umsatz, Rechnungen, offene Posten und Kosten.",
     roles: FINANCE_ROLES,
     children: [
       { label: "Dashboard", href: "/finance" },
       { label: "Umsatz", href: "/finance/monthly" },
-      { label: "MRR", href: "/finance/customers" },
-      { label: "Forecast", href: "/finance/forecast" },
       { label: "Rechnungen", href: "/finance/invoices" },
+      { label: "Offene Posten", href: "/finance/open" },
       { label: "Kosten", href: "/finance/expenses" },
     ],
   },
@@ -159,26 +141,21 @@ export const MAIN_NAV: NavItem[] = [
     label: "Analytics",
     href: "/analytics",
     icon: BarChart3,
-    description:
-      "Alle Zahlen an einem Ort: Sales-Performance je Mitarbeiter, Kampagnen, Quellen und Meta.",
+    description: "Zahlen je Mitarbeiter, Kampagne und Quelle.",
     roles: SALES_ROLES,
   },
   {
-    label: "Settings",
+    label: "Einstellungen",
     href: "/settings",
     icon: Cog,
-    description:
-      "Organisation, Benutzer, Rollen, Integrationen, AI sowie internes Wissen und SOPs.",
+    description: "Benutzer, Rollen, Integrationen, AI und System.",
     roles: ["super_admin", "ceo", "cso", "developer"],
     children: [
       { label: "Benutzer", href: "/settings/users", roles: ["super_admin", "ceo", "cso"] },
       { label: "Rollen", href: "/settings/roles", roles: ["super_admin", "ceo", "cso"] },
       { label: "Integrationen", href: "/settings/integrations", roles: ["super_admin", "ceo", "cso"] },
       { label: "AI", href: "/settings/ai", roles: ["super_admin", "ceo", "developer"] },
-      { label: "Systemeinstellungen", href: "/settings/system", roles: ["super_admin", "ceo", "cso"] },
-      { label: "Wissen", href: "/operations/knowledge" },
-      { label: "SOPs", href: "/operations/sops" },
-      { label: "Prompts", href: "/operations/prompts" },
+      { label: "System", href: "/settings/system", roles: ["super_admin", "ceo", "cso"] },
     ],
   },
 ];
@@ -198,9 +175,6 @@ export const SETTINGS_NAV: NavChild[] = [
   { label: "Integrationen", href: "/settings/integrations", roles: SETTINGS_BASE_ROLES },
   { label: "System", href: "/settings/system", roles: SETTINGS_BASE_ROLES },
   { label: "AI & Automationen", href: "/settings/ai", roles: SETTINGS_AI_ROLES },
-  { label: "Wissen", href: "/operations/knowledge" },
-  { label: "SOPs", href: "/operations/sops" },
-  { label: "Prompts", href: "/operations/prompts" },
 ];
 
 /** Wer den Settings-Bereich grundsaetzlich betreten darf (Union). */

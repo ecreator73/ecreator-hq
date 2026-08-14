@@ -1,12 +1,13 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { CheckCircle2 } from "lucide-react";
+import { CheckCircle2, FolderKanban } from "lucide-react";
 import {
   Card,
   CardContent,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { EmptyState } from "@/components/ui/empty-state";
 import { StatusBadge } from "@/components/tasks/status-badge";
 import {
@@ -15,7 +16,9 @@ import {
   shootsService,
   websiteProjectsService,
   crmProjectsService,
+  projectListService,
   type ProductionSummary,
+  type ProjectListItem,
 } from "@/server/services";
 import type {
   ApprovalWithRelations,
@@ -45,6 +48,10 @@ const EMPTY_SUMMARY: ProductionSummary = {
   contentProductions: 0,
   crmGoLives: 0,
 };
+
+/** Status, die ein Projekt als abgeschlossen kennzeichnen. */
+const FINISHED_STATUSES = new Set(["completed", "published"]);
+const MAX_PROJECTS = 12;
 
 type WidgetTone = "neutral" | "brand" | "amber" | "green" | "red";
 
@@ -130,29 +137,53 @@ function clientLink(client: { id: string; name: string } | null) {
   );
 }
 
+function ProjectTile({ project }: { project: ProjectListItem }) {
+  return (
+    <Link
+      href={project.href}
+      className="flex flex-col gap-2 rounded-xl border border-neutral-200 bg-white p-4 shadow-sm transition-colors hover:border-brand-300 hover:bg-brand-50/40"
+    >
+      <span className="min-w-0">
+        <span className="block truncate text-sm font-medium text-neutral-900">
+          {project.title}
+        </span>
+        <span className="mt-0.5 block truncate text-xs text-neutral-500">
+          {project.clientName ?? "Kein Kunde"}
+        </span>
+      </span>
+      <span className="flex flex-wrap items-center gap-1.5">
+        <Badge tone="neutral">{project.typeLabel}</Badge>
+        <Badge tone="brand">{project.statusLabel}</Badge>
+      </span>
+    </Link>
+  );
+}
+
 export default async function ProductionDashboardPage() {
   const week = weekRange();
   const t = today();
   const in7 = isoDay(addDays(new Date(), 7));
 
   // Unabhaengige Abrufe parallel.
-  const [s, openApprovals, weekShoots, websites, crm] = await Promise.all([
-    productionDashboardService.safeSummary().catch(() => EMPTY_SUMMARY),
-    approvalsService
-      .list({ status: "open" })
-      .catch(() => [] as ApprovalWithRelations[]),
-    shootsService
-      .list({
-        from: week.from,
-        to: week.to,
-        statusIn: ["planned", "confirmed"],
-      })
-      .catch(() => [] as ShootWithRelations[]),
-    websiteProjectsService
-      .list()
-      .catch(() => [] as WebsiteProjectWithRelations[]),
-    crmProjectsService.list().catch(() => [] as CrmProjectWithRelations[]),
-  ]);
+  const [s, openApprovals, weekShoots, websites, crm, allProjects] =
+    await Promise.all([
+      productionDashboardService.safeSummary().catch(() => EMPTY_SUMMARY),
+      approvalsService
+        .list({ status: "open" })
+        .catch(() => [] as ApprovalWithRelations[]),
+      shootsService
+        .list({
+          from: week.from,
+          to: week.to,
+          statusIn: ["planned", "confirmed"],
+        })
+        .catch(() => [] as ShootWithRelations[]),
+      websiteProjectsService
+        .list()
+        .catch(() => [] as WebsiteProjectWithRelations[]),
+      crmProjectsService.list().catch(() => [] as CrmProjectWithRelations[]),
+      projectListService.all().catch(() => [] as ProjectListItem[]),
+    ]);
 
   const overdueLaunches = websites.filter(
     (w) =>
@@ -169,19 +200,25 @@ export default async function ProductionDashboardPage() {
       c.status !== "live",
   );
 
+  const runningProjects = allProjects.filter(
+    (p) => !FINISHED_STATUSES.has(p.status),
+  );
+  const shownProjects = runningProjects.slice(0, MAX_PROJECTS);
+
   return (
-    <div className="space-y-6">
-      {/* KPI-Widgets */}
-      <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
+    <div className="space-y-8">
+      {/* Die wichtigsten Zahlen */}
+      <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 xl:grid-cols-6">
         <Widget
           label="Laufende Projekte"
           value={s.runningProjects}
-          href="/production/websites"
+          href="/production/projects"
           tone="brand"
         />
         <Widget
           label="Projekte mit Risiko"
           value={s.atRisk}
+          href="/production/projects"
           tone={s.atRisk > 0 ? "red" : "neutral"}
         />
         <Widget
@@ -189,6 +226,12 @@ export default async function ProductionDashboardPage() {
           value={s.overdueTasks}
           href="/tasks/today"
           tone={s.overdueTasks > 0 ? "red" : "neutral"}
+        />
+        <Widget
+          label="Offene Freigaben"
+          value={s.openApprovals}
+          href="/production/assets"
+          tone={s.openApprovals > 0 ? "amber" : "neutral"}
         />
         <Widget
           label="Shootings diese Woche"
@@ -202,192 +245,230 @@ export default async function ProductionDashboardPage() {
           href="/production/websites"
           tone={s.launchesThisWeek > 0 ? "green" : "neutral"}
         />
-        <Widget
-          label="Offene Freigaben"
-          value={s.openApprovals}
-          href="/production/assets"
-          tone={s.openApprovals > 0 ? "amber" : "neutral"}
-        />
-        <Widget
-          label="Content Produktionen"
-          value={s.contentProductions}
-          href="/production/content"
-        />
-        <Widget
-          label="CRM Go-Lives"
-          value={s.crmGoLives}
-          href="/production/crm"
-        />
       </div>
 
-      {/* Produktions-Alerts */}
-      <div className="grid gap-4 lg:grid-cols-2">
-        {/* Offene Freigaben */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Offene Freigaben ({openApprovals.length})</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {openApprovals.length === 0 ? (
-              <EmptyState
-                icon={CheckCircle2}
-                title="Keine offenen Freigaben"
-                description="Aktuell wartet kein Asset auf eine Kunden-Freigabe."
-              />
-            ) : (
-              <ul className="divide-y divide-neutral-100">
-                {openApprovals.map((a) => (
-                  <li
-                    key={a.id}
-                    className="flex items-center justify-between gap-3 py-2.5"
-                  >
-                    <div className="min-w-0">
-                      <Link
-                        href="/production/assets"
-                        className="block truncate text-sm font-medium text-neutral-900 hover:text-brand-700"
-                      >
-                        {a.title}
-                      </Link>
-                      <div className="mt-0.5 text-xs">
-                        {clientLink(a.client)}
-                      </div>
-                    </div>
-                    <StatusBadge
-                      label={statusLabel("approval", a.status)}
-                      color={approvalColor(a.status)}
-                    />
-                  </li>
+      {/* Laufende Projekte */}
+      <Card>
+        <CardHeader>
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <CardTitle>Laufende Projekte ({runningProjects.length})</CardTitle>
+            <Link
+              href="/production/projects"
+              className="text-sm font-medium text-brand-700 hover:text-brand-800"
+            >
+              Alle Projekte ansehen
+            </Link>
+          </div>
+        </CardHeader>
+        <CardContent>
+          {runningProjects.length === 0 ? (
+            <EmptyState
+              icon={FolderKanban}
+              title="Kein laufendes Projekt"
+              description="Sobald ein Website-, Ads-, CRM- oder Content-Projekt startet, erscheint es hier."
+              action={
+                <Link
+                  href="/production/projects"
+                  className="inline-flex h-9 items-center rounded-lg bg-brand-600 px-3 text-sm font-medium text-white shadow-sm transition-colors hover:bg-brand-700"
+                >
+                  Zu den Projekten
+                </Link>
+              }
+            />
+          ) : (
+            <div className="space-y-3">
+              <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
+                {shownProjects.map((p) => (
+                  <ProjectTile key={`${p.type}-${p.id}`} project={p} />
                 ))}
-              </ul>
-            )}
-          </CardContent>
-        </Card>
+              </div>
+              {runningProjects.length > shownProjects.length ? (
+                <Link
+                  href="/production/projects"
+                  className="inline-block text-sm font-medium text-brand-700 hover:text-brand-800"
+                >
+                  + {runningProjects.length - shownProjects.length} weitere
+                  Projekte
+                </Link>
+              ) : null}
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
-        {/* Shootings diese Woche */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Shootings diese Woche ({weekShoots.length})</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {weekShoots.length === 0 ? (
-              <EmptyState
-                title="Keine Shootings"
-                description="Diese Woche sind keine geplanten oder bestaetigten Drehs vorhanden."
-              />
-            ) : (
-              <ul className="divide-y divide-neutral-100">
-                {weekShoots.map((sh) => (
-                  <li
-                    key={sh.id}
-                    className="flex items-center justify-between gap-3 py-2.5"
-                  >
-                    <div className="min-w-0">
-                      <Link
-                        href="/production/shoots"
-                        className="block truncate text-sm font-medium text-neutral-900 hover:text-brand-700"
-                      >
-                        {sh.title}
-                      </Link>
-                      <div className="mt-0.5 text-xs">
-                        {clientLink(sh.client)}
+      {/* Was jetzt ansteht */}
+      <div className="space-y-3">
+        <h2 className="text-sm font-semibold uppercase tracking-wide text-neutral-500">
+          Was jetzt ansteht
+        </h2>
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+          {/* Offene Freigaben */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Offene Freigaben ({openApprovals.length})</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {openApprovals.length === 0 ? (
+                <EmptyState
+                  icon={CheckCircle2}
+                  title="Keine offenen Freigaben"
+                  description="Aktuell wartet kein Asset auf eine Kunden-Freigabe."
+                />
+              ) : (
+                <ul className="divide-y divide-neutral-100">
+                  {openApprovals.map((a) => (
+                    <li
+                      key={a.id}
+                      className="flex items-center justify-between gap-3 py-2.5"
+                    >
+                      <div className="min-w-0">
+                        <Link
+                          href="/production/assets"
+                          className="block truncate text-sm font-medium text-neutral-900 hover:text-brand-700"
+                        >
+                          {a.title}
+                        </Link>
+                        <div className="mt-0.5 text-xs">
+                          {clientLink(a.client)}
+                        </div>
                       </div>
-                    </div>
-                    <StatusBadge
-                      label={statusLabel("shoot", sh.status)}
-                      color={shootColor(sh.status)}
-                    />
-                  </li>
-                ))}
-              </ul>
-            )}
-          </CardContent>
-        </Card>
+                      <StatusBadge
+                        label={statusLabel("approval", a.status)}
+                        color={approvalColor(a.status)}
+                      />
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </CardContent>
+          </Card>
 
-        {/* Ueberfaellige Launches */}
-        <Card>
-          <CardHeader>
-            <CardTitle>
-              Ueberfaellige Launches ({overdueLaunches.length})
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {overdueLaunches.length === 0 ? (
-              <EmptyState
-                icon={CheckCircle2}
-                title="Keine ueberfaelligen Launches"
-                description="Alle geplanten Website-Launches liegen im Zeitplan."
-              />
-            ) : (
-              <ul className="divide-y divide-neutral-100">
-                {overdueLaunches.map((w) => (
-                  <li
-                    key={w.id}
-                    className="flex items-center justify-between gap-3 py-2.5"
-                  >
-                    <div className="min-w-0">
-                      <Link
-                        href={`/production/websites/${w.id}`}
-                        className="block truncate text-sm font-medium text-neutral-900 hover:text-brand-700"
-                      >
-                        {w.title}
-                      </Link>
-                      <div className="mt-0.5 text-xs">
-                        {clientLink(w.client)}
+          {/* Ueberfaellige Launches */}
+          <Card>
+            <CardHeader>
+              <CardTitle>
+                Ueberfaellige Launches ({overdueLaunches.length})
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {overdueLaunches.length === 0 ? (
+                <EmptyState
+                  icon={CheckCircle2}
+                  title="Alles im Zeitplan"
+                  description="Kein geplanter Website-Launch ist ueberfaellig."
+                />
+              ) : (
+                <ul className="divide-y divide-neutral-100">
+                  {overdueLaunches.map((w) => (
+                    <li
+                      key={w.id}
+                      className="flex items-center justify-between gap-3 py-2.5"
+                    >
+                      <div className="min-w-0">
+                        <Link
+                          href={`/production/websites/${w.id}`}
+                          className="block truncate text-sm font-medium text-neutral-900 hover:text-brand-700"
+                        >
+                          {w.title}
+                        </Link>
+                        <div className="mt-0.5 text-xs">
+                          {clientLink(w.client)}
+                        </div>
                       </div>
-                    </div>
-                    <StatusBadge
-                      label={statusLabel("website_project", w.status)}
-                      color={websiteColor(w.status)}
-                    />
-                  </li>
-                ))}
-              </ul>
-            )}
-          </CardContent>
-        </Card>
+                      <StatusBadge
+                        label={statusLabel("website_project", w.status)}
+                        color={websiteColor(w.status)}
+                      />
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </CardContent>
+          </Card>
 
-        {/* CRM Go-Lives <= 7 Tage */}
-        <Card>
-          <CardHeader>
-            <CardTitle>
-              CRM Go-Lives (naechste 7 Tage) ({crmGoLives.length})
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {crmGoLives.length === 0 ? (
-              <EmptyState
-                icon={CheckCircle2}
-                title="Keine Go-Lives"
-                description="In den naechsten 7 Tagen steht kein CRM Go-Live an."
-              />
-            ) : (
-              <ul className="divide-y divide-neutral-100">
-                {crmGoLives.map((c) => (
-                  <li
-                    key={c.id}
-                    className="flex items-center justify-between gap-3 py-2.5"
-                  >
-                    <div className="min-w-0">
-                      <Link
-                        href={`/production/crm/${c.id}`}
-                        className="block truncate text-sm font-medium text-neutral-900 hover:text-brand-700"
-                      >
-                        {c.title}
-                      </Link>
-                      <div className="mt-0.5 text-xs">
-                        {clientLink(c.client)}
+          {/* CRM Go-Lives <= 7 Tage */}
+          <Card>
+            <CardHeader>
+              <CardTitle>
+                CRM Go-Lives naechste 7 Tage ({crmGoLives.length})
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {crmGoLives.length === 0 ? (
+                <EmptyState
+                  icon={CheckCircle2}
+                  title="Keine Go-Lives"
+                  description="In den naechsten 7 Tagen steht kein CRM Go-Live an."
+                />
+              ) : (
+                <ul className="divide-y divide-neutral-100">
+                  {crmGoLives.map((c) => (
+                    <li
+                      key={c.id}
+                      className="flex items-center justify-between gap-3 py-2.5"
+                    >
+                      <div className="min-w-0">
+                        <Link
+                          href={`/production/crm/${c.id}`}
+                          className="block truncate text-sm font-medium text-neutral-900 hover:text-brand-700"
+                        >
+                          {c.title}
+                        </Link>
+                        <div className="mt-0.5 text-xs">
+                          {clientLink(c.client)}
+                        </div>
                       </div>
-                    </div>
-                    <StatusBadge
-                      label={statusLabel("crm_project", c.status)}
-                      color={crmColor(c.status)}
-                    />
-                  </li>
-                ))}
-              </ul>
-            )}
-          </CardContent>
-        </Card>
+                      <StatusBadge
+                        label={statusLabel("crm_project", c.status)}
+                        color={crmColor(c.status)}
+                      />
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Shootings diese Woche */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Shootings diese Woche ({weekShoots.length})</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {weekShoots.length === 0 ? (
+                <EmptyState
+                  title="Keine Shootings"
+                  description="Diese Woche sind keine geplanten oder bestaetigten Drehs vorhanden."
+                />
+              ) : (
+                <ul className="divide-y divide-neutral-100">
+                  {weekShoots.map((sh) => (
+                    <li
+                      key={sh.id}
+                      className="flex items-center justify-between gap-3 py-2.5"
+                    >
+                      <div className="min-w-0">
+                        <Link
+                          href="/production/shoots"
+                          className="block truncate text-sm font-medium text-neutral-900 hover:text-brand-700"
+                        >
+                          {sh.title}
+                        </Link>
+                        <div className="mt-0.5 text-xs">
+                          {clientLink(sh.client)}
+                        </div>
+                      </div>
+                      <StatusBadge
+                        label={statusLabel("shoot", sh.status)}
+                        color={shootColor(sh.status)}
+                      />
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </CardContent>
+          </Card>
+        </div>
       </div>
     </div>
   );

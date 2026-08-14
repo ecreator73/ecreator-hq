@@ -1,6 +1,5 @@
 import { requireUser } from "@/lib/auth";
-import { PageHeader } from "@/components/page-header";
-import { SalesNav } from "@/components/sales/sales-nav";
+import { SalesNav, SalesAreaHeader } from "@/components/sales/sales-nav";
 import { LeadQuickCreate } from "@/components/sales/lead-quick-create";
 
 export default async function SalesLayout({
@@ -11,12 +10,8 @@ export default async function SalesLayout({
   await requireUser();
   return (
     <div className="space-y-6">
-      <PageHeader
-        eyebrow="Sales"
-        title="Sales CRM"
-        description="Von Lead bis Abschluss - Pipeline, Follow-ups, Angebote und Verträge."
-        actions={<LeadQuickCreate />}
-      />
+      {/* Kopf + Tabs richten sich nach dem Bereich (Leads oder Sales). */}
+      <SalesAreaHeader action={<LeadQuickCreate />} />
       <SalesNav />
       <div>{children}</div>
     </div>

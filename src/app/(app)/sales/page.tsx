@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { CalendarDays, FileSignature, FileText } from "lucide-react";
 import {
   Card,
   CardContent,
@@ -8,9 +9,17 @@ import {
 } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
 import { StatusBadge } from "@/components/tasks/status-badge";
-import { leadsService, salesDashboardService } from "@/server/services";
+import { OfferQuickCreate } from "@/components/sales/offer-quick-create";
+import { MeetingQuickCreate } from "@/components/sales/meeting-quick-create";
+import {
+  contractsService,
+  offersService,
+  salesDashboardService,
+  salesMeetingsService,
+} from "@/server/services";
 import type { SalesDashboardData } from "@/server/services";
-import type { LeadWithRelations } from "@/types/entities";
+import type { Contract, Offer, SalesMeetingRow } from "@/types/entities";
+import { STATUS_REGISTRY, statusLabel } from "@/config/catalog";
 import { formatCHF, formatDate, cn } from "@/lib/utils";
 import { today } from "@/lib/dates";
 
@@ -79,103 +88,247 @@ function Widget({
   return <div className={base}>{inner}</div>;
 }
 
+/** Kleiner "Alle anzeigen"-Link in den Karten-Koepfen. */
+function AllLink({ href, label }: { href: string; label: string }) {
+  return (
+    <Link
+      href={href}
+      className="text-xs font-medium text-brand-700 hover:text-brand-800"
+    >
+      {label}
+    </Link>
+  );
+}
+
+function offerStatusColor(status: string): string | undefined {
+  return STATUS_REGISTRY.offer[status as keyof typeof STATUS_REGISTRY.offer]
+    ?.color;
+}
+
+function meetingStatusColor(status: string | null): string | undefined {
+  if (!status) return undefined;
+  return STATUS_REGISTRY.meeting[status as keyof typeof STATUS_REGISTRY.meeting]
+    ?.color;
+}
+
 export default async function SalesDashboardPage() {
-  // Unabhaengige Abrufe parallel statt nacheinander.
-  const [d, heuteLeads] = await Promise.all([
+  // Unabhaengige Abrufe parallel; jede Promise faengt ihren Fehler selbst ab.
+  const [d, allOffers, allMeetings, allContracts] = await Promise.all([
     salesDashboardService.summary().catch(() => EMPTY_SUMMARY),
-    leadsService
-      .list(
-        { dueTo: today(), excludeStatus: ["abgeschlossen", "absage", "fehleintrag", "andere"] },
-        { pageSize: 8, sort: { column: "next_action_date", ascending: true } },
-      )
-      .then((r) => r.rows as LeadWithRelations[])
-      .catch(() => [] as LeadWithRelations[]),
+    offersService.list().catch((): Offer[] => []),
+    salesMeetingsService.list().catch((): SalesMeetingRow[] => []),
+    contractsService.list().catch((): Contract[] => []),
   ]);
+
+  const heute = today();
+
+  // Offene Angebote = Entwurf oder gesendet; die mit der naechsten Frist zuerst.
+  const openOffers = allOffers
+    .filter((o) => o.status === "draft" || o.status === "sent")
+    .sort((a, b) => (a.valid_until ?? "9999").localeCompare(b.valid_until ?? "9999"))
+    .slice(0, 8);
+
+  // Naechste Termine = kuenftig und weder abgesagt noch durchgefuehrt.
+  const nextMeetings = allMeetings
+    .filter(
+      (m) =>
+        m.meeting_date != null &&
+        m.meeting_date.slice(0, 10) >= heute &&
+        m.status !== "cancelled" &&
+        m.status !== "completed",
+    )
+    .sort((a, b) => (a.meeting_date ?? "").localeCompare(b.meeting_date ?? ""))
+    .slice(0, 8);
+
+  const activeContracts = allContracts.filter((c) => c.status === "active");
+  const contractsMonthly = activeContracts.reduce(
+    (sum, c) => sum + (c.value_monthly ?? 0),
+    0,
+  );
 
   return (
     <div className="space-y-6">
-      {/* Widget-Cards */}
-      <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
-        <Widget label="Neue Leads" value={d.newLeads} href="/sales/leads" tone="brand" />
-        <Widget label="Heisse Leads" value={d.hotLeads} href="/sales/leads" tone="amber" />
+      {/* Was hier haeufig gemacht wird */}
+      <div className="flex flex-wrap items-center justify-end gap-2">
+        <OfferQuickCreate />
+        <MeetingQuickCreate />
+      </div>
+
+      {/* Die 5 Zahlen, die im Abschluss zaehlen */}
+      <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
         <Widget
-          label="Follow-ups heute"
-          value={d.followupsToday}
-          href="/sales/followups"
-          tone={d.followupsToday > 0 ? "amber" : "neutral"}
-        />
-        <Widget label="Termine heute" value={d.meetingsToday} href="/sales/meetings" />
-        <Widget label="Offene Angebote" value={d.openOffers} href="/sales/offers" />
-        <Widget
-          label="Pipeline-Volumen"
-          value={formatCHF(d.pipelineValue)}
-          href="/sales/pipeline"
+          label="Offene Angebote"
+          value={d.openOffers}
+          href="/sales/offers"
           tone="brand"
         />
-        <Widget label="Abschlussquote" value={`${d.winRate} %`} tone="green" />
         <Widget
-          label="Umsatzpotenzial"
-          value={formatCHF(d.revenuePotential)}
-          href="/sales/pipeline"
+          label="Angebotsvolumen"
+          value={formatCHF(d.offerVolume)}
+          href="/sales/offers"
+          tone="brand"
+        />
+        <Widget
+          label="Abschlussquote"
+          value={`${d.offerWinRate} %`}
+          href="/sales/offers"
           tone="green"
+        />
+        <Widget
+          label="Termine heute"
+          value={d.meetingsToday}
+          href="/sales/meetings"
+          tone={d.meetingsToday > 0 ? "amber" : "neutral"}
+        />
+        <Widget
+          label="Vertraege laufen aus"
+          value={d.contractsExpiring}
+          href="/sales/contracts"
+          tone={d.contractsExpiring > 0 ? "amber" : "neutral"}
         />
       </div>
 
-      {/* Wen rufe ich heute an? */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Wen rufe ich heute an?</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {heuteLeads.length === 0 ? (
-            <EmptyState
-              title="Keine faelligen Leads"
-              description="Heute steht kein Follow-up an. Zeit fuer neue Akquise."
-            />
-          ) : (
-            <div className="overflow-x-auto rounded-lg border border-neutral-200">
-              <table className="w-full min-w-[36rem] text-sm">
-                <thead>
-                  <tr className="border-b border-neutral-200 text-left text-xs uppercase tracking-wide text-neutral-400">
-                    <th className="px-4 py-2.5 font-medium">Firma</th>
-                    <th className="px-4 py-2.5 font-medium">Status</th>
-                    <th className="px-4 py-2.5 font-medium">Wert</th>
-                    <th className="px-4 py-2.5 font-medium">Naechste Aktion</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-neutral-100">
-                  {heuteLeads.map((lead) => (
-                    <tr key={lead.id} className="hover:bg-neutral-50">
-                      <td className="px-4 py-2.5">
-                        <Link
-                          href={`/sales/leads/${lead.id}`}
-                          className="font-medium text-neutral-900 hover:text-brand-700"
-                        >
-                          {lead.company_name}
-                        </Link>
-                      </td>
-                      <td className="px-4 py-2.5">
+      {/* Arbeitslisten - breite Bildschirme nutzen drei Spalten */}
+      <div className="grid gap-6 lg:grid-cols-2 xl:grid-cols-3">
+        {/* Offene Angebote */}
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between">
+            <CardTitle>Offene Angebote</CardTitle>
+            <AllLink href="/sales/offers" label="Alle Angebote" />
+          </CardHeader>
+          <CardContent>
+            {openOffers.length === 0 ? (
+              <EmptyState
+                icon={FileText}
+                title="Keine offenen Angebote"
+                description="Alle Angebote sind entschieden. Erstelle ein neues Angebot fuer einen Lead oder Kunden."
+                action={<OfferQuickCreate />}
+              />
+            ) : (
+              <ul className="divide-y divide-neutral-100 rounded-lg border border-neutral-200">
+                {openOffers.map((o) => (
+                  <li
+                    key={o.id}
+                    className="flex items-start justify-between gap-3 px-4 py-3 text-sm"
+                  >
+                    <div className="min-w-0">
+                      <p className="truncate font-medium text-neutral-900">
+                        {o.title}
+                      </p>
+                      <p className="mt-0.5 text-xs text-neutral-500">
+                        {formatCHF(o.amount, o.currency)}
+                        {o.valid_until
+                          ? ` - gueltig bis ${formatDate(o.valid_until)}`
+                          : ""}
+                      </p>
+                    </div>
+                    <div className="shrink-0">
+                      <StatusBadge
+                        label={statusLabel("offer", o.status)}
+                        color={offerStatusColor(o.status)}
+                      />
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Naechste Termine */}
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between">
+            <CardTitle>Naechste Termine</CardTitle>
+            <AllLink href="/sales/meetings" label="Alle Termine" />
+          </CardHeader>
+          <CardContent>
+            {nextMeetings.length === 0 ? (
+              <EmptyState
+                icon={CalendarDays}
+                title="Keine Termine geplant"
+                description="Vereinbare ein Gespraech, um ein Angebot zum Abschluss zu bringen."
+                action={<MeetingQuickCreate />}
+              />
+            ) : (
+              <ul className="divide-y divide-neutral-100 rounded-lg border border-neutral-200">
+                {nextMeetings.map((m) => (
+                  <li
+                    key={m.id}
+                    className="flex items-start justify-between gap-3 px-4 py-3 text-sm"
+                  >
+                    <div className="min-w-0">
+                      <p className="truncate font-medium text-neutral-900">
+                        {m.title}
+                      </p>
+                      <p className="mt-0.5 truncate text-xs text-neutral-500">
+                        {m.lead?.company_name || m.client?.name || "Ohne Zuordnung"}
+                      </p>
+                    </div>
+                    <div className="shrink-0 text-right">
+                      <p className="text-xs text-neutral-600">
+                        {m.meeting_date ? formatDate(m.meeting_date) : "-"}
+                      </p>
+                      <div className="mt-1">
                         <StatusBadge
-                          label={lead.status?.label}
-                          color={lead.status?.color}
+                          label={statusLabel("meeting", m.status)}
+                          color={meetingStatusColor(m.status)}
                         />
-                      </td>
-                      <td className="px-4 py-2.5 tabular-nums text-neutral-700">
-                        {formatCHF(lead.estimated_value, lead.currency)}
-                      </td>
-                      <td className="px-4 py-2.5 text-neutral-600">
-                        {lead.next_action_date
-                          ? formatDate(lead.next_action_date)
-                          : "-"}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+                      </div>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Vertraege */}
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between">
+            <CardTitle>Vertraege</CardTitle>
+            <AllLink href="/sales/contracts" label="Alle Vertraege" />
+          </CardHeader>
+          <CardContent>
+            {activeContracts.length === 0 && d.contractsExpiring === 0 ? (
+              <EmptyState
+                icon={FileSignature}
+                title="Keine laufenden Vertraege"
+                description="Sobald aus Angeboten Vertraege werden, erscheinen sie hier."
+              />
+            ) : (
+              <ul className="divide-y divide-neutral-100 rounded-lg border border-neutral-200">
+                <li className="flex items-center justify-between gap-3 px-4 py-3 text-sm">
+                  <span className="text-neutral-600">Aktive Vertraege</span>
+                  <span className="font-semibold tabular-nums text-neutral-900">
+                    {activeContracts.length}
+                  </span>
+                </li>
+                <li className="flex items-center justify-between gap-3 px-4 py-3 text-sm">
+                  <span className="text-neutral-600">Wert pro Monat</span>
+                  <span className="font-semibold tabular-nums text-brand-700">
+                    {formatCHF(contractsMonthly)}
+                  </span>
+                </li>
+                <li className="flex items-center justify-between gap-3 px-4 py-3 text-sm">
+                  <span className="text-neutral-600">
+                    Laufen in 90 Tagen aus
+                  </span>
+                  <span
+                    className={cn(
+                      "font-semibold tabular-nums",
+                      d.contractsExpiring > 0
+                        ? "text-amber-600"
+                        : "text-neutral-900",
+                    )}
+                  >
+                    {d.contractsExpiring}
+                  </span>
+                </li>
+              </ul>
+            )}
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }

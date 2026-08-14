@@ -12,6 +12,19 @@ export function OperationsHeader() {
   const pathname = usePathname();
   const isGrowth =
     pathname === "/operations/growth" || pathname.startsWith("/operations/growth/");
+  const isMeetings =
+    pathname === "/operations/meetings" || pathname.startsWith("/operations/meetings/");
+
+  // Meetings gehoeren fachlich zu den Kunden (Menuepunkt Kunden -> Meetings).
+  if (isMeetings) {
+    return (
+      <PageHeader
+        eyebrow="Kunden"
+        title="Meetings"
+        description="Termine mit Kunden: Notizen, Entscheidungen und naechste Schritte."
+      />
+    );
+  }
 
   if (isGrowth) {
     return (
