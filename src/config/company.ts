@@ -1,51 +1,55 @@
 /**
- * Firmendaten fuer Geschaeftsdokumente (Offerten, Vertraege).
- *
- * WICHTIG: Hier stehen NUR echte, von der Geschaeftsleitung bestaetigte Angaben.
- * Leere Felder werden im Dokument automatisch weggelassen - es wird nichts
- * erfunden (Adresse, UID/MwSt-Nummer und IBAN sind rechtlich relevant).
- * Zum Ergaenzen einfach die Werte hier eintragen.
+ * Firmendaten fuer Geschaeftsdokumente (Offerte, Vertrag).
+ * Quelle: offizieller eCreator-Vertrag + Brandguide (Stand 08.2026).
  */
 export const companyInfo = {
   name: "eCreator GmbH",
-  /** Zusatz unter dem Namen, z.B. "Digitalagentur" */
-  tagline: "Digitalagentur",
+  claim: "TRAFFIC IS NICE. CUSTOMERS ARE BETTER.",
 
-  // --- Adresse (bitte ergaenzen) ---
-  street: "",
-  zip: "",
-  city: "",
+  // --- Adresse ---
+  street: "Zuercherstrasse 17",
+  zip: "8173",
+  city: "Neerach",
   country: "Schweiz",
 
   // --- Kontakt ---
+  phone: "+41 44 974 27 60",
   email: "info@ecreator.ch",
-  phone: "",
-  website: "ecreator.ch",
+  website: "www.ecreator.ch",
 
-  // --- Rechtliches / Zahlung (bitte ergaenzen) ---
-  /** z.B. "CHE-123.456.789 MWST" */
-  vatId: "",
-  /** Mehrwertsteuersatz in Prozent; 0 = nicht ausgewiesen */
-  vatRate: 8.1,
-  iban: "",
-  bank: "",
+  // --- Rechtliches / Zahlung ---
+  uid: "CHE-462.387.483",
+  bank: "Valiant Bank",
+  iban: "CH04 0630 0508 3713 7511 7",
+  /** Alle Betraege werden exkl. MwSt ausgewiesen (wie im Originalvertrag). */
+  amountsExclVat: true,
 
-  /** Standard-Zahlungsfrist in Tagen (fuer Offerten). */
-  paymentTermDays: 30,
+  /** Standard-Zahlungsbedingung (Vertrag). */
+  paymentTerms:
+    "Monatliche Zahlung im Voraus, zahlbar innerhalb von 7 Tagen nach Rechnungsstellung.",
+  /** Hinweis auf die AGB - integrierender Vertragsbestandteil. */
+  termsNote:
+    "Es gelten die Allgemeinen Geschaeftsbedingungen (AGB) der eCreator, welche integrierender Bestandteil dieses Vertrags sind.",
+
+  // --- Marke ---
+  logoSrc: "/brand/ecreator-logo.svg",
+  markSrc: "/brand/ecreator-mark.svg",
+  brandColor: "#6754e9",
+  brandColorLight: "#8978ff",
 } as const;
 
-/** Adresszeile(n) als Array - leere Angaben fallen weg. */
+/** Adresszeilen (leere Angaben fallen weg). */
 export function companyAddressLines(): string[] {
   const c = companyInfo;
-  return [
-    c.street,
-    [c.zip, c.city].filter(Boolean).join(" "),
-    c.country,
-  ].filter((l) => l.trim() !== "");
+  return [c.street, [c.zip, c.city].filter(Boolean).join(" "), c.country].filter(
+    (l) => l.trim() !== "",
+  );
 }
 
-/** Kontaktzeile fuer die Fusszeile. */
-export function companyContactLine(): string {
+/** Einzeilige Adresse fuer die Fusszeile: "eCreator GmbH · Zuercherstrasse 17 · 8173 Neerach" */
+export function companyFooterLine(): string {
   const c = companyInfo;
-  return [c.phone, c.email, c.website].filter(Boolean).join(" · ");
+  return [c.name, c.street, [c.zip, c.city].filter(Boolean).join(" ")]
+    .filter(Boolean)
+    .join(" · ");
 }

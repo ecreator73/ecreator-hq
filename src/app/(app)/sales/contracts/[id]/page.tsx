@@ -1,7 +1,12 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { contractsService, clientsService } from "@/server/services";
-import { DocumentShell, AmountRow } from "@/components/documents/document-shell";
+import {
+  DocumentShell,
+  PositionsTable,
+  TotalLine,
+  SignatureBlock,
+} from "@/components/documents/document-shell";
 import { companyInfo } from "@/config/company";
 import { CONTRACT_TYPES, RENEWAL_TYPES } from "@/config/catalog";
 import { formatCHF, formatDate } from "@/lib/utils";
@@ -13,7 +18,7 @@ const typeLabel = (k: string | null) =>
 const renewalLabel = (k: string | null) =>
   k ? (RENEWAL_TYPES.find((t) => t.key === k)?.label ?? k) : null;
 
-/** Vertrag als druckbares A4-Dokument (Browser -> "Als PDF speichern"). */
+/** Vertrag als druckbares A4-Dokument im offiziellen eCreator-Layout. */
 export default async function ContractDocumentPage({
   params,
 }: {
@@ -29,144 +34,86 @@ export default async function ContractDocumentPage({
     : null;
 
   const monthly = contract.value_monthly ?? 0;
-  const totalValue = contract.value_total ?? 0;
+  const total = contract.value_total ?? 0;
+  const isMonthly = monthly > 0;
+  const amount = isMonthly ? monthly : total;
+  const priceLabel = isMonthly
+    ? `${formatCHF(monthly, contract.currency)}/Monat`
+    : formatCHF(total, contract.currency);
 
-  const meta = [
-    { label: "Datum", value: formatDate(contract.created_at) },
-    ...(contract.start_date
-      ? [{ label: "Beginn", value: formatDate(contract.start_date) }]
-      : []),
-    ...(contract.end_date
-      ? [{ label: "Ende", value: formatDate(contract.end_date) }]
-      : []),
-  ];
+  // Zahlungsbedingungen: Standardtext + Laufzeit/Startdatum aus dem Vertrag.
+  const terms: string[] = [companyInfo.paymentTerms];
+  if (contract.start_date) terms.push(`Startdatum: ${formatDate(contract.start_date)}`);
+  if (contract.end_date) terms.push(`Vertragsende: ${formatDate(contract.end_date)}`);
+  if (renewalLabel(contract.renewal_type))
+    terms.push(`Verlaengerung: ${renewalLabel(contract.renewal_type)}`);
+  if (contract.cancellation_notice_days)
+    terms.push(`Kuendigungsfrist: ${contract.cancellation_notice_days} Tage`);
 
   return (
     <DocumentShell
       backHref="/sales/contracts"
       backLabel="Zurueck zu Vertraege"
-      documentType="Vertrag"
-      documentNumber={contract.id.slice(0, 8).toUpperCase()}
+      documentType="VERTRAG"
+      documentNumber={`VER-${contract.id.slice(0, 4).toUpperCase()}`}
+      documentDate={formatDate(contract.created_at)}
+      customerNumber={client ? `KD-${client.id.slice(0, 4).toUpperCase()}` : null}
       recipient={{
         name: client?.name ?? "Vertragspartner",
-        lines: [client?.address, client?.city, client?.email],
+        lines: [client?.address, client?.city, client?.country],
       }}
-      meta={meta}
     >
-      <h1 className="text-xl font-semibold tracking-tight text-neutral-900">
-        {contract.title}
-      </h1>
-      {typeLabel(contract.contract_type) ? (
-        <p className="mt-1 text-sm text-neutral-500">
-          {typeLabel(contract.contract_type)}
-        </p>
-      ) : null}
+      <p className="text-sm leading-relaxed text-neutral-700">
+        Sehr geehrte Damen und Herren,
+      </p>
+      <p className="mt-2 text-sm leading-relaxed text-neutral-700">
+        vielen Dank fuer Ihre Anfrage. Gerne unterbreiten wir Ihnen folgendes
+        {isMonthly ? " monatliches Servicepaket" : " Angebot"}:
+      </p>
 
-      {/* Vertragsparteien */}
-      <section className="mt-6 grid gap-6 sm:grid-cols-2 print-keep">
-        <div>
-          <p className="text-[11px] uppercase tracking-wide text-neutral-400">
-            Auftragnehmerin
-          </p>
-          <p className="mt-1 font-medium text-neutral-900">{companyInfo.name}</p>
-          {companyInfo.vatId ? (
-            <p className="text-xs text-neutral-500">UID: {companyInfo.vatId}</p>
-          ) : null}
-        </div>
-        <div>
-          <p className="text-[11px] uppercase tracking-wide text-neutral-400">
-            Auftraggeberin
-          </p>
-          <p className="mt-1 font-medium text-neutral-900">
-            {client?.name ?? "-"}
-          </p>
-          {client?.address ? (
-            <p className="text-xs text-neutral-500">
-              {[client.address, client.city].filter(Boolean).join(", ")}
-            </p>
-          ) : null}
-        </div>
-      </section>
-
-      {/* Eckdaten */}
-      <section className="mt-8 print-keep">
-        <h2 className="mb-2 text-sm font-semibold text-neutral-900">
-          Vertragsdaten
-        </h2>
-        <dl className="divide-y divide-neutral-100 border-y border-neutral-200 text-sm">
-          {[
-            { label: "Leistung", value: contract.title },
-            { label: "Vertragsart", value: typeLabel(contract.contract_type) ?? "-" },
+      <div className="mt-6">
+        <PositionsTable
+          rows={[
             {
-              label: "Laufzeit",
-              value: [
-                contract.start_date ? formatDate(contract.start_date) : null,
-                contract.end_date ? formatDate(contract.end_date) : "unbefristet",
-              ]
-                .filter(Boolean)
-                .join(" bis "),
+              description: contract.title,
+              detail: typeLabel(contract.contract_type),
+              qty: "1,00",
+              unitPrice: priceLabel,
+              total: priceLabel,
             },
-            {
-              label: "Verlaengerung",
-              value: renewalLabel(contract.renewal_type) ?? "-",
-            },
-            {
-              label: "Kuendigungsfrist",
-              value: contract.cancellation_notice_days
-                ? `${contract.cancellation_notice_days} Tage`
-                : "-",
-            },
-          ].map((r) => (
-            <div key={r.label} className="flex justify-between gap-6 py-2">
-              <dt className="text-neutral-500">{r.label}</dt>
-              <dd className="text-right font-medium text-neutral-900">{r.value}</dd>
-            </div>
-          ))}
-        </dl>
-      </section>
-
-      {/* Verguetung */}
-      <section className="mt-8 print-keep">
-        <h2 className="mb-2 text-sm font-semibold text-neutral-900">Verguetung</h2>
-        <div className="ml-auto w-full max-w-xs space-y-1">
-          {monthly > 0 ? (
-            <AmountRow
-              label="Monatlich"
-              value={formatCHF(monthly, contract.currency)}
-            />
-          ) : null}
-          {totalValue > 0 ? (
-            <AmountRow
-              label="Gesamtwert"
-              value={formatCHF(totalValue, contract.currency)}
-            />
-          ) : null}
-          <AmountRow
-            label={monthly > 0 ? "Monatlich (Total)" : "Total"}
-            value={formatCHF(monthly > 0 ? monthly : totalValue, contract.currency)}
-            strong
-          />
-        </div>
-        {companyInfo.vatRate > 0 ? (
-          <p className="mt-2 text-right text-xs text-neutral-500">
-            Alle Betraege exkl. MwSt ({String(companyInfo.vatRate).replace(".", ",")} %).
+          ]}
+        />
+        <TotalLine
+          label={
+            isMonthly ? "Monatlicher Betrag (exkl. MwSt)" : "Gesamtbetrag (exkl. MwSt)"
+          }
+          value={formatCHF(amount, contract.currency)}
+        />
+        {isMonthly && total > 0 ? (
+          <p className="mt-1 text-right text-xs text-neutral-500">
+            Gesamtwert ueber die Laufzeit: {formatCHF(total, contract.currency)}
           </p>
         ) : null}
+      </div>
+
+      {/* Zahlungsbedingungen */}
+      <section className="mt-8 print-keep">
+        <h2 className="text-sm font-semibold text-neutral-900">
+          Zahlungsbedingungen:
+        </h2>
+        <ul className="mt-1.5 space-y-1 text-sm leading-relaxed text-neutral-700">
+          {terms.map((t) => (
+            <li key={t}>{t}</li>
+          ))}
+        </ul>
       </section>
 
-      {/* Unterschriften */}
-      <section className="mt-14 grid gap-10 sm:grid-cols-2 print-keep">
-        {[companyInfo.name, client?.name ?? "Auftraggeberin"].map((party, i) => (
-          <div key={`${party}-${i}`}>
-            <div className="h-12 border-b border-neutral-400" />
-            <p className="mt-1.5 text-xs text-neutral-500">
-              {party}
-              <br />
-              Ort, Datum, Unterschrift
-            </p>
-          </div>
-        ))}
-      </section>
+      {/* AGB-Hinweis */}
+      <p className="mt-6 text-xs leading-relaxed text-neutral-500 print-keep">
+        {companyInfo.termsNote}
+      </p>
+
+      <SignatureBlock customerName={client?.name} />
     </DocumentShell>
   );
 }

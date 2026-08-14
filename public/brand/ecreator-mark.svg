@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg id="Layer_1" xmlns="http://www.w3.org/2000/svg" version="1.1" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 1000 1000">
+  <!-- Generator: Adobe Illustrator 30.0.0, SVG Export Plug-In . SVG Version: 2.1.1 Build 123)  -->
+  <defs>
+    <style>
+      .st0 {
+        fill: url(#linear-gradient2);
+      }
+
+      .st1 {
+        fill: url(#linear-gradient1);
+      }
+
+      .st2 {
+        fill: url(#linear-gradient4);
+      }
+
+      .st3 {
+        fill: url(#linear-gradient5);
+      }
+
+      .st4 {
+        fill: url(#linear-gradient3);
+      }
+
+      .st5 {
+        fill: url(#linear-gradient);
+      }
+    </style>
+    <linearGradient id="linear-gradient" x1="-573.1" y1="-731.9" x2="581.5" y2="706.8" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#8978ff"/>
+      <stop offset="1" stop-color="#6754e9"/>
+    </linearGradient>
+    <linearGradient id="linear-gradient1" x1="214.2" y1="264.1" x2="652.5" y2="810.2" xlink:href="#linear-gradient"/>
+    <linearGradient id="linear-gradient2" x1="-225.7" y1="-654.3" x2="775.2" y2="592.7" xlink:href="#linear-gradient"/>
+    <linearGradient id="linear-gradient3" x1="-706.5" y1="-1275.2" x2="910.6" y2="739.7" xlink:href="#linear-gradient"/>
+    <linearGradient id="linear-gradient4" x1="-1026.3" y1="-1277.5" x2="642.8" y2="802.3" xlink:href="#linear-gradient"/>
+    <linearGradient id="linear-gradient5" x1="201.2" y1="235.5" x2="736.5" y2="902.4" xlink:href="#linear-gradient"/>
+  </defs>
+  <path class="st5" d="M192,501.4c0,123.2,72.8,229.7,177.7,278.9l16-84.3-14.8-10.3c-60.5-42.4-96.7-111.5-96.7-184.9,0-104.9,71.4-195.1,173.6-219.4l17.6-4.2,15.8-83.2c-161.2,9.7-289.3,143.8-289.3,307.4Z"/>
+  <path class="st1" d="M755.2,673.7c-56.7,83.6-152.2,135.6-255.2,135.6s-45-2.5-66.3-7.2l15.5-81.3,13.4,2.2c13.7,2.4,25.9,3.5,37.5,3.5,53,0,103.7-18.5,144.3-52.8h110.9Z"/>
+  <path class="st0" d="M548.7,197.5l-15.2,79.7,13.3,2.8c68.1,14.5,124.9,59.2,155.2,120.3h-192l-15.8,82.7h313.2c-8.5-145-117.9-263.1-258.8-285.6Z"/>
+  <path class="st4" d="M585.3,82.9l-14.3-2.9-14.5,76.1c166.1,27.1,293.3,171.6,293.3,345.2v23.6h-363.5l-14.5,76.1h443.1l4.2-22.8c4.8-25.8,7.2-51.9,7.2-77.5,0-201.8-143.4-377.5-341-417.8Z"/>
+  <path class="st2" d="M347.4,897.5l14.3-74.9c-124.3-53.7-211.5-177.4-211.5-321.1S301.4,157.5,489.3,151.8l5.4-28.5,9.6-50.3-36.3,2.7C246.9,92.1,73.6,278.8,73.6,500.7s94.4,312.6,240.5,383.6l32.8,15.9.5-2.8Z"/>
+  <path class="st3" d="M890.3,673.7l-10.9,21.2c-73.6,143.3-219,232.2-379.4,232.2s-49.3-2.2-74.2-6.6l-14.4-2.5,14.4-74.8c23.8,5.2,48.6,7.9,74.2,7.9,126.1,0,242.7-68.9,304.3-177.4h86Z"/>
+</svg>
