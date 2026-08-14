@@ -180,13 +180,13 @@ export function LeadsTable({
         <EmptyState title="Keine Leads gefunden" description="Passe die Filter an oder erstelle einen neuen Lead." />
       ) : (
         <div className="overflow-x-auto rounded-xl border border-neutral-200 bg-white">
-          <table className="w-full min-w-[80rem] text-sm">
+          <table className="w-full min-w-[86rem] text-sm">
             <thead>
               <tr className="border-b border-neutral-200 text-left text-xs uppercase tracking-wide text-neutral-400">
                 <th className="px-4 py-2.5 font-medium">Name</th>
                 <th className="px-4 py-2.5 font-medium">E-Mail</th>
                 <th className="px-4 py-2.5 font-medium">Telefon</th>
-                <SortHeader label="Firma" col="company_name" sp={sp} onClick={toggleSort} />
+                <SortHeader label="Firma" col="company_name" sp={sp} onClick={toggleSort} className="w-[20rem] min-w-[18rem]" />
                 <th className="px-4 py-2.5 font-medium">Dienstleistung</th>
                 <th className="px-4 py-2.5 font-medium">Quelle</th>
                 <th className="px-4 py-2.5 font-medium">Kampagne</th>
@@ -213,7 +213,7 @@ export function LeadsTable({
                     <td className="px-4 py-2.5 text-neutral-600">
                       {l.phone ? <a href={`tel:${l.phone}`} className="hover:text-brand-700">{l.phone}</a> : <span className="text-neutral-300">-</span>}
                     </td>
-                    <td className="px-4 py-2.5 text-neutral-700">{l.company_name}</td>
+                    <td className="w-[20rem] min-w-[18rem] px-4 py-2.5 text-neutral-700">{l.company_name}</td>
                     <td className="max-w-[14rem] px-4 py-2.5 text-neutral-600">
                       <span className="block truncate" title={l.dienstleistung ?? undefined}>{l.dienstleistung ?? "-"}</span>
                     </td>
@@ -308,15 +308,17 @@ function SortHeader({
   col,
   sp,
   onClick,
+  className,
 }: {
   label: string;
   col: string;
   sp: URLSearchParams;
   onClick: (col: string) => void;
+  className?: string;
 }) {
   const active = sp.get("sort") === col;
   return (
-    <th className="px-4 py-2.5 font-medium">
+    <th className={cn("px-4 py-2.5 font-medium", className)}>
       <button type="button" onClick={() => onClick(col)} className={cn("inline-flex items-center gap-1 hover:text-neutral-700", active && "text-brand-700")}>
         {label}
         <ArrowUpDown className="h-3 w-3" />
