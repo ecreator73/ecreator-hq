@@ -522,6 +522,8 @@ export const LEAD_SOURCES = [
   { key: "website", label: "Website" },
   { key: "linkedin", label: "LinkedIn" },
   { key: "meta_ads", label: "Meta Ads" },
+  { key: "google_ads", label: "Google Ads" },
+  { key: "tiktok_ads", label: "TikTok Ads" },
   { key: "other", label: "Sonstige" },
 ] as const;
 export const LEAD_SOURCE_KEYS = LEAD_SOURCES.map((t) => t.key) as [
