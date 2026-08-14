@@ -180,10 +180,13 @@ export const leadsService = {
   async board(filters: LeadFilters = {}): Promise<LeadWithRelations[]> {
     const { supabase } = await getContext();
     const reg = await resolveLeadStatus();
+    // Heisseste zuerst; bei gleichem Score die neuesten oben, damit frisch
+    // eingegangene Leads in ihrer Spalte sofort sichtbar sind.
     let query = supabase
       .from("leads")
       .select(LEAD_SELECT)
-      .order("lead_score", { ascending: false });
+      .order("lead_score", { ascending: false })
+      .order("created_at", { ascending: false });
     query = applyLeadFilters(reg, filters, query);
     query = query.limit(500);
     const { data, error } = await query;

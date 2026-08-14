@@ -10,6 +10,12 @@ function scoreTone(score: number): string {
   return "bg-neutral-100 text-neutral-500 border-neutral-200";
 }
 
+/** Vor weniger als 48 Stunden eingegangen -> "Neu"-Markierung. */
+function isFresh(lead: LeadWithRelations): boolean {
+  if (!lead.created_at) return false;
+  return Date.now() - new Date(lead.created_at).getTime() < 48 * 60 * 60 * 1000;
+}
+
 const TERMINAL = ["abgeschlossen", "absage", "fehleintrag", "andere"];
 function overdue(lead: LeadWithRelations): boolean {
   if (!lead.next_action_date) return false;
@@ -35,6 +41,11 @@ export function LeadCard({ lead }: { lead: LeadWithRelations }) {
     >
       <div className="flex items-start justify-between gap-2">
         <p className="min-w-0 text-sm font-semibold leading-snug text-neutral-900 group-hover:text-brand-700">
+          {isFresh(lead) ? (
+            <span className="mr-1.5 inline-flex items-center rounded bg-brand-100 px-1.5 py-0.5 align-middle text-[10px] font-bold uppercase tracking-wide text-brand-700">
+              Neu
+            </span>
+          ) : null}
           {title}
         </p>
         <span
