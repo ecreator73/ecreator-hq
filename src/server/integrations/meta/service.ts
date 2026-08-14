@@ -1,6 +1,7 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getContext } from "@/server/services/_helpers";
 import { encryptSecret, decryptSecret } from "@/lib/crypto";
+import { computeLeadScore } from "@/lib/lead-score";
 import { metaClient } from "./client";
 import { normalizeMetaLead, type NormalizedLead } from "./normalizer";
 
@@ -254,10 +255,14 @@ export const metaService = {
     }
 
     const sid = await leadStatusId(db, "neu");
+    const nextAction = tomorrowISO();
     const insert = {
       company_name: n.company_name, contact_name: n.contact_name,
       email: n.email, phone: n.phone, source: n.source, status_id: sid, owner_id: null,
-      next_action_date: tomorrowISO(),
+      next_action_date: nextAction,
+      // Score direkt berechnen, sonst blieben eingehende Leads dauerhaft auf 0
+      // und "Heisse Leads" waere ohne Aussage.
+      lead_score: computeLeadScore({ status: "neu", next_action_date: nextAction }),
       ...metaFields,
       ...(n.created_at ? { created_at: n.created_at } : {}),
     };

@@ -158,7 +158,9 @@ export const leadsService = {
     const reg = await resolveLeadStatus();
     const page = Math.max(1, params.page ?? 1);
     const pageSize = Math.min(200, Math.max(1, params.pageSize ?? 50));
-    const sort = params.sort ?? { column: "lead_score", ascending: false };
+    // Standard: neueste Leads zuerst. (Frueher nach lead_score - dadurch waren
+    // frisch eingegangene Leads in der Liste praktisch nicht auffindbar.)
+    const sort = params.sort ?? { column: "created_at", ascending: false };
     let query = supabase
       .from("leads")
       .select(LEAD_SELECT, { count: "exact" })
