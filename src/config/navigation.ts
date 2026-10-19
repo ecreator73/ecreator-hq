@@ -71,10 +71,11 @@ export const MAIN_NAV: NavItem[] = [
     description: "Neue Kontakte gewinnen: Leads, Pipeline, LinkedIn und Follow-ups.",
     roles: SALES_ROLES,
     children: [
-      { label: "Dashboard", href: "/leads" },
-      { label: "Alle Leads", href: "/sales/leads" },
-      { label: "Tabelle", href: "/sales/pipeline" },
-      { label: "Follow-ups", href: "/sales/followups" },
+      { label: "Arbeitsliste", href: "/leads" },
+      { label: "Alle Leads", href: "/leads/alle" },
+      { label: "Kampagnen", href: "/leads/kampagnen" },
+      { label: "Team", href: "/leads/team" },
+      { label: "Mein Bereich", href: "/leads/mein" },
     ],
   },
   {

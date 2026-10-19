@@ -14,7 +14,7 @@ import type { Client, LeadWithRelations } from "@/types/entities";
 const LEAD_SELECT = `
   id, org_id, company_name, contact_name, email, phone, website, industry,
   company_size, city, country, source, lead_score, estimated_value, currency,
-  status_id, owner_id, notes, next_action_date, created_by, updated_by,
+  status_id, owner_id, notes, next_action, next_action_date, created_by, updated_by,
   deleted_at, created_at, updated_at,
   legacy_status, campaign_name, dienstleistung, assigned_to_name, assigned_to_email,
   external_lead_id, form_id, form_name, ad_id, ad_name, adset_id, adset_name, campaign_id,

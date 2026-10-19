@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState, useTransition } from "react";
 import { EyeOff, Search, X } from "lucide-react";
 import { LEAD_PIPELINE_KEYS, LEAD_STATUSES } from "@/config/catalog";
-import { moveLeadAction } from "@/app/(app)/sales/actions";
+import { setLeadStatusAction } from "@/app/(app)/leads/actions";
 import { LeadCard } from "@/components/sales/lead-card";
 import { formatCHF, cn } from "@/lib/utils";
 import type { LeadWithRelations } from "@/types/entities";
@@ -95,7 +95,7 @@ export function LeadPipeline({ leads }: { leads: LeadWithRelations[] }) {
     );
 
     startTransition(async () => {
-      const res = await moveLeadAction(id, statusKey);
+      const res = await setLeadStatusAction(id, statusKey);
       if (!res.ok) setItems(snapshot); // bei Fehler zuruecksetzen
     });
   }

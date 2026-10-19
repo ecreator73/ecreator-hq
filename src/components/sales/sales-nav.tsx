@@ -12,10 +12,11 @@ import { cn } from "@/lib/utils";
  * so bleibt das Menue uebersichtlich, ohne URLs zu brechen.
  */
 const LEADS_TABS = [
-  { label: "Dashboard", href: "/leads" },
-  { label: "Alle Leads", href: "/sales/leads" },
-  { label: "Tabelle", href: "/sales/pipeline" },
-  { label: "Follow-ups", href: "/sales/followups" },
+  { label: "Arbeitsliste", href: "/leads" },
+  { label: "Alle Leads", href: "/leads/alle" },
+  { label: "Kampagnen", href: "/leads/kampagnen" },
+  { label: "Team", href: "/leads/team" },
+  { label: "Mein Bereich", href: "/leads/mein" },
 ];
 
 const SALES_TABS = [
@@ -91,7 +92,7 @@ export function SalesAreaHeader({ action }: { action?: React.ReactNode }) {
         </h1>
         <p className="mt-1 max-w-2xl text-sm text-neutral-500">
           {leads
-            ? "Neue Kontakte gewinnen - Leads erfassen, Pipeline pflegen und Follow-ups einhalten."
+            ? "Leads anrufen, nächste Schritte planen und sehen, was jede Kampagne bringt."
             : "Abschluss machen - Angebote, Vertraege und Termine."}
         </p>
       </div>

@@ -130,6 +130,7 @@ for (const l of X.leads) {
     assigned_to_email: owner?.email ?? null,
     notes: l.notes ?? prev?.notes ?? null,
     // 26.06.2026 = Sammeldatum des Alt-Imports (kein echtes Follow-up) -> Lovable-Stand
+    next_action: l.next_action ?? null,
     next_action_date: l.next_action_date ?? (prev?.next_action_date === "2026-06-26" ? null : prev?.next_action_date ?? null),
     dienstleistung: l.dienstleistung ?? md.dienstleistung ?? null,
     campaign_name: md.campaign_name ?? null,
@@ -163,13 +164,20 @@ for (const c of X.lead_comments ?? []) {
   const u = userOf(c.user_id);
   acts.push({ legacy_id: `lovable:lead_comments:${c.id}`, lead_id: lid, type: "note", subject: "Kommentar", body: c.comment, activity_date: c.created_at, author_name: u.name });
 }
-const OUTCOME = { keine_antwort: "Keine Antwort", erreicht: "Erreicht", mailbox: "Mailbox", falsche_nummer: "Falsche Nummer", termin: "Termin vereinbart", kein_interesse: "Kein Interesse" };
+const OUTCOME = { no_answer: "Nicht erreicht", reached: "Erreicht", interested: "Interessiert", follow_up: "Follow-up", appointment: "Termin vereinbart", offer: "Offerte", not_interested: "Kein Interesse", wrong_number: "Falsche Nummer", lost: "Verloren", won: "Gewonnen" };
+// Alte Lovable-Schluessel auf die heutigen abbilden
+const OUTCOME_KEY = { keine_antwort: "no_answer", erreicht: "reached", termin_vereinbart: "appointment", kein_interesse: "not_interested", callback: "follow_up" };
 for (const c of X.call_logs ?? []) {
   const lid = leadId.get(c.lead_id);
   if (!lid) continue;
   const u = userOf(c.user_id);
   const body = [c.notes, c.next_action ? `Naechster Schritt: ${c.next_action}${c.next_action_date ? ` (${c.next_action_date})` : ""}` : null].filter(Boolean).join("\n") || null;
-  acts.push({ legacy_id: `lovable:call_logs:${c.id}`, lead_id: lid, type: "call", subject: `Anruf: ${OUTCOME[c.outcome] ?? c.outcome ?? "–"}`, body, activity_date: c.call_date ?? c.created_at, author_name: u.name });
+  const outcome = OUTCOME_KEY[c.outcome] ?? c.outcome ?? null;
+  acts.push({
+    legacy_id: `lovable:call_logs:${c.id}`, lead_id: lid, type: "call", subject: `Anruf: ${OUTCOME[outcome] ?? outcome ?? "–"}`, body,
+    activity_date: c.call_date ?? c.created_at, author_name: u.name, outcome,
+    duration_seconds: c.duration_seconds ?? null, next_action: c.next_action ?? null, next_action_date: c.next_action_date ?? null,
+  });
 }
 for (const a of X.activity_log ?? []) {
   if (!a.lead_id || !["status_change", "appointment", "offer"].includes(a.activity_type)) continue;
@@ -187,6 +195,10 @@ for (const a of X.activity_log ?? []) {
   });
 }
 const ra = await insertNew("sales_activities", acts);
+// Bestehende Anrufe um strukturierte Felder ergaenzen (Migration 0025)
+if (!DRY) for (const a of acts.filter((x) => x.type === "call")) {
+  await db.from("sales_activities").update({ outcome: a.outcome, duration_seconds: a.duration_seconds, next_action: a.next_action, next_action_date: a.next_action_date, subject: a.subject }).eq("legacy_id", a.legacy_id);
+}
 log(`Verlauf: ${ra.fresh} neu, ${ra.existing} schon vorhanden (Kommentare, Anrufe, Statuswechsel, Termine, Offerten)`);
 
 /* 6. Sales-To-dos -> tasks --------------------------------------------------- */

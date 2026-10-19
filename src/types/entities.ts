@@ -170,6 +170,7 @@ export interface Lead extends AuditedEntity {
   owner_id: string | null;
   notes: string | null;
   next_action_date: string | null;
+  next_action?: string | null;
   /** Import / Ad-Lead-Felder (optional, aus altem CRM bzw. Meta Lead Ads). */
   legacy_status?: string | null;
   campaign_name?: string | null;
