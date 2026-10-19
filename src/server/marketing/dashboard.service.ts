@@ -610,7 +610,11 @@ export async function listSyncRuns(limit = 50): Promise<any[] | null> {
 
 /** Ist die Migration 0023 eingespielt? (sonst klare Meldung statt leerer Seiten) */
 export const schemaReady = cache(async (): Promise<boolean> => {
-  const { supabase } = await getContext();
-  const { error } = await supabase.from("mi_activity_log").select("id", { head: true, count: "exact" }).limit(1);
-  return !error;
+  try {
+    const { supabase } = await getContext();
+    const { error } = await supabase.from("mi_activity_log").select("id", { head: true, count: "exact" }).limit(1);
+    return !error;
+  } catch {
+    return false;
+  }
 });

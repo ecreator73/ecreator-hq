@@ -14,6 +14,11 @@ Operations und Finanzen in einer einzigen, verbundenen Plattform.
 > [`docs/blueprint/`](docs/blueprint/); Details je Phase in
 > [`docs/PHASE-2.md`](docs/PHASE-2.md) … [`docs/PHASE-17.md`](docs/PHASE-17.md).
 >
+> **Marketing Intelligence (19.10.2026):** Bereich `/marketing` (nur Leitung) mit
+> Website-Lead-Eingang, Calendly, GA4, Google Ads, Search Console und Meta Ads.
+> Migration `0023_marketing_intelligence.sql`; Details und Aktivierung in
+> [`docs/MARKETING-INTELLIGENCE.md`](docs/MARKETING-INTELLIGENCE.md) Abschnitt 7.
+>
 > Die 17 Migrationen muessen der Reihe nach (`0001 → 0017`) eingespielt werden;
 > fuer verschluesselte Integrations-Credentials (Phase 9) wird `CREDENTIALS_SECRET`
 > benoetigt.

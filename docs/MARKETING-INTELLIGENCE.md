@@ -1,6 +1,6 @@
 # Marketing Intelligence Dashboard – Audit und Architekturvorschlag
 
-Stand: 19.10.2026. Status: **freigegeben, Umsetzung startet** (noch nichts gebaut).
+Stand: 19.10.2026. Status: **umgesetzt und ausgerollt**; offen: Migration 0023 einspielen, danach Weiterleitung der Website aktivieren, Zugänge (siehe Abschnitt 7).
 
 ## 0. Entscheidungen des Kunden (19.10.2026)
 
@@ -120,3 +120,46 @@ Drei Zählweisen bleiben getrennt und werden im Dashboard so beschriftet: **Plat
 - Website-Änderung: zusätzlicher serverseitiger Versand an eCreator OS + Dublettensperre.
 - Neue Umgebungsvariablen in Vercel (Website und eCreator OS) und Migration 0023 in der Supabase-Datenbank von eCreator OS.
 - Jedes Deployment (Website und eCreator OS).
+
+## 7. Umsetzung (19.10.2026)
+
+### Gebaut
+| Teil | Ort |
+|---|---|
+| Migration (leads/contacts erweitert, mi_*-Tabellen, RLS nur Leitung) | `supabase/migrations/0023_marketing_intelligence.sql` |
+| Website-Lead-Eingang (HMAC, Idempotenz, Doppelklick) | `src/app/api/webhooks/website-lead/route.ts`, `src/server/marketing/website-lead.ts` |
+| Calendly-Webhook, Buchungen, Backfill | `src/app/api/webhooks/calendly/route.ts`, `src/server/marketing/bookings.ts`, `providers/calendly.ts` |
+| Provider GA4, Google Ads, Search Console, Meta | `src/server/marketing/providers/*.ts` |
+| Abgleich (Cron täglich 04:30 UTC, manuell) | `src/server/marketing/sync.ts`, `src/app/api/cron/marketing-sync/route.ts` |
+| Kanalklassifizierung, Zeiträume Europe/Zurich | `src/lib/marketing/channels.ts`, `src/lib/marketing/range.ts` |
+| Dashboard (22 Seiten, 7 Gruppen) | `src/app/(app)/marketing/**` |
+| CSV-Export (serverseitig, Audit-Log) | `src/app/api/marketing/export/route.ts` |
+| Tests (35) | `node --experimental-strip-types scripts/test-marketing.mts` |
+| Website: Weiterleitung + Dublettensperre | ecreator-editorial `src/lib/leads/ecreator-os.ts`, `src/lib/leads/deliver.ts` (Commit 4db05c8) |
+| Leistung vorher/nachher | `docs/baseline/website-2026-10-19-nachher.md` (keine Regression) |
+
+### Umgebungsvariablen
+| Projekt | Variable | Stand |
+|---|---|---|
+| ecreator-hq | `WEBSITE_LEAD_SECRET`, `CRON_SECRET` | gesetzt (19.10.2026) |
+| ecreator-hq | `GOOGLE_OAUTH_CLIENT_ID`, `GOOGLE_OAUTH_CLIENT_SECRET`, `GOOGLE_ADS_DEVELOPER_TOKEN` (optional `GOOGLE_ADS_LOGIN_CUSTOMER_ID`, `GOOGLE_ADS_API_VERSION`) | offen (Kunde) |
+| ecreator-website | `WEBSITE_LEAD_SECRET` | gesetzt (19.10.2026) |
+| ecreator-website | `ECREATOR_OS_LEAD_URL` = `https://ecreator-hq.vercel.app/api/webhooks/website-lead` | **erst nach Migration 0023 setzen**, dann Website neu deployen |
+Calendly-Token und Meta-Token werden im Dashboard unter Marketing → Integrationen hinterlegt (verschlüsselt, `CREDENTIALS_SECRET`).
+
+### Aktivierung (Reihenfolge)
+1. `0023_marketing_intelligence.sql` im Supabase-SQL-Editor ausführen (idempotent, löscht nichts).
+2. Marketing → Tracking-Gesundheit öffnen: Datenbank bereit.
+3. In Vercel «ecreator-website» `ECREATOR_OS_LEAD_URL` setzen und neu deployen. Ab dann landet jeder Website-Lead zusätzlich in eCreator OS.
+4. Calendly verbinden (Token, Webhook wird automatisch registriert), Buchungen 90 Tage nachladen.
+5. Google-OAuth-Client anlegen, Variablen setzen, «Mit Google verbinden», GA4-Property (neu anlegen), Ads-Konto 204-916-5141, Search-Console-Site wählen, «Backfill 90 Tage».
+6. Optional Meta Ads (System-User-Token mit ads_read).
+7. Umstellung: Wenn eCreator OS den Vertrieb übernimmt, `LEAD_WEBHOOK_URL` in «ecreator-website» entfernen → eCreator OS ist einziges Ziel.
+
+### Abweichungen und Grenzen
+- Status-Set: Die bestehenden CRM-Status (neu, nicht erreicht, Follow-up, Mail gesendet, Termin gebucht, Vertrag/Mail, Abgeschlossen, Absage …) bleiben massgebend; «Qualifiziert» und «Offerte gesendet» aus dem Briefing gibt es nicht als eigenen Status (keine zweite Status-Welt).
+- Rollen: ADMIN/MANAGEMENT = super_admin, ceo, cso (Zugriff Marketing). EMPLOYEE (sales) sieht Leads im CRM, nicht das Marketing-Dashboard.
+- Visitor Journeys nur «Einstieg → Anfrage»; vollständige Seitenpfade bräuchten zusätzliches JavaScript auf der Website (Performance-/Design-Freeze).
+- Spend je Landingpage nicht zurechenbar (kein Landingpage-Bericht der Plattformen); wird nicht geschätzt.
+- Website-Leads je Google-Kampagne nur mit utm_campaign; Auto-Tagging (nur gclid) ordnet dem Kanal, nicht der Kampagne zu.
+- Doppelklick-Sperre der Website wirkt pro Server-Instanz; eCreator OS erkennt zusätzlich instanzübergreifend (Fingerprint, 10 Min.). Lovable kann im Ausnahmefall einen doppelten Lead erhalten.
