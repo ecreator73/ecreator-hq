@@ -7,6 +7,7 @@ import {
   Factory,
   Wallet,
   BarChart3,
+  Megaphone,
   Cog,
   UserCog,
   ShieldCheck,
@@ -134,6 +135,21 @@ export const MAIN_NAV: NavItem[] = [
       { label: "Rechnungen", href: "/finance/invoices" },
       { label: "Offene Posten", href: "/finance/open" },
       { label: "Kosten", href: "/finance/expenses" },
+    ],
+  },
+  {
+    label: "Marketing",
+    href: "/marketing",
+    icon: Megaphone,
+    description:
+      "Marketing Intelligence: Website, Werbung, Leads, Termine und Attribution von www.ecreator.ch.",
+    roles: LEADERSHIP_ROLES,
+    children: [
+      { label: "Dashboard", href: "/marketing" },
+      { label: "Live-Aktivitaet", href: "/marketing/live" },
+      { label: "Leads", href: "/marketing/leads" },
+      { label: "Werbung", href: "/marketing/campaigns" },
+      { label: "Integrationen", href: "/marketing/integrations" },
     ],
   },
   {
