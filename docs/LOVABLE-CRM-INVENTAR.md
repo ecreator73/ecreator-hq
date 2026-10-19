@@ -39,3 +39,14 @@ Spalten je Tabelle: siehe Erfassung im Verlauf (19.10.2026); Kernfelder:
 
 ## Stand eCreator OS (zum Vergleich)
 Alt-Import vorhanden: 176 Leads (legacy_id), 14 Kunden, 14 Verträge, 124 Monatszahlen, 80 Aufgaben, 177 Aktivitäten. Fehlend u. a.: 144 neuere Leads, Kunden-Leads, Creator, Bewerbungen, Shoots, Content, Rechnungen, Offerten, Produkte.
+
+## Übernahme-Stand (19.10.2026)
+| Stufe | Stand | Wo in eCreator OS |
+|---|---|---|
+| Dashboard + Leads | übernommen (Migration 0024/0025, `scripts/import-lovable.mjs`) | `/`, `/leads`, `/leads/alle`, `/leads/kampagnen`, `/leads/team`, `/leads/mein` |
+| Kunden | übernommen (Migration 0026, `scripts/import-lovable-clients.mjs`) | `/clients/list`, `/clients/[id]` (Kunden-Leads, Rechnung & Links), `/clients/[id]/bericht`, `/clients/leads`, `/clients/onboarding`, `/clients/contracts` |
+| Production (Shoots, Creator, Bewerbungen, Content) | offen | – |
+| Finance (Rechnungen inkl. QR) | offen | – |
+| Öffentliche Links (Onboarding-Formular, Vertragsunterschrift, Shoot-Review) | offen, zuletzt | – |
+
+Kunden-Leads: Rohstatus bleibt in `client_leads.status_raw`, Gruppe in `status` (Regeln `src/lib/client-lead-status.ts`, pro Kunde überschreibbar über `clients.reporting_status_map`). Vor der Umstellung: Delta-Import beider Skripte (idempotent über `legacy_id`).
