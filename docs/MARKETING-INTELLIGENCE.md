@@ -1,6 +1,6 @@
 # Marketing Intelligence Dashboard – Audit und Architekturvorschlag
 
-Stand: 19.10.2026. Status: **umgesetzt und ausgerollt**; offen: Migration 0023 einspielen, danach Weiterleitung der Website aktivieren, Zugänge (siehe Abschnitt 7).
+Stand: 19.10.2026. Status: **umgesetzt, ausgerollt und aktiv** (Migration 0023 eingespielt, Website-Leads gehen an eCreator OS). Offen: Zugänge (siehe Abschnitt 7).
 
 ## 0. Entscheidungen des Kunden (19.10.2026)
 
@@ -144,13 +144,13 @@ Drei Zählweisen bleiben getrennt und werden im Dashboard so beschriftet: **Plat
 | ecreator-hq | `WEBSITE_LEAD_SECRET`, `CRON_SECRET` | gesetzt (19.10.2026) |
 | ecreator-hq | `GOOGLE_OAUTH_CLIENT_ID`, `GOOGLE_OAUTH_CLIENT_SECRET`, `GOOGLE_ADS_DEVELOPER_TOKEN` (optional `GOOGLE_ADS_LOGIN_CUSTOMER_ID`, `GOOGLE_ADS_API_VERSION`) | offen (Kunde) |
 | ecreator-website | `WEBSITE_LEAD_SECRET` | gesetzt (19.10.2026) |
-| ecreator-website | `ECREATOR_OS_LEAD_URL` = `https://ecreator-hq.vercel.app/api/webhooks/website-lead` | **erst nach Migration 0023 setzen**, dann Website neu deployen |
+| ecreator-website | `ECREATOR_OS_LEAD_URL` = `https://ecreator-hq.vercel.app/api/webhooks/website-lead` | gesetzt und ausgerollt (19.10.2026) |
 Calendly-Token und Meta-Token werden im Dashboard unter Marketing → Integrationen hinterlegt (verschlüsselt, `CREDENTIALS_SECRET`).
 
 ### Aktivierung (Reihenfolge)
-1. `0023_marketing_intelligence.sql` im Supabase-SQL-Editor ausführen (idempotent, löscht nichts).
-2. Marketing → Tracking-Gesundheit öffnen: Datenbank bereit.
-3. In Vercel «ecreator-website» `ECREATOR_OS_LEAD_URL` setzen und neu deployen. Ab dann landet jeder Website-Lead zusätzlich in eCreator OS.
+1. ✅ `0023_marketing_intelligence.sql` im Supabase-SQL-Editor ausgeführt (19.10.2026); Prüfung: `node scripts/check-marketing.mjs`.
+2. ✅ Ende-zu-Ende-Test gegen die Produktionsdatenbank (neu, Retry, Doppelklick, Wiederholung, Buchung, falsche Signatur, ungültige Daten); Testdaten entfernt.
+3. ✅ `ECREATOR_OS_LEAD_URL` gesetzt, Website neu deployt. Jeder Website-Lead landet zusätzlich in eCreator OS (erste echte Anfrage in Marketing → Live-Aktivität prüfen).
 4. Calendly verbinden (Token, Webhook wird automatisch registriert), Buchungen 90 Tage nachladen.
 5. Google-OAuth-Client anlegen, Variablen setzen, «Mit Google verbinden», GA4-Property (neu anlegen), Ads-Konto 204-916-5141, Search-Console-Site wählen, «Backfill 90 Tage».
 6. Optional Meta Ads (System-User-Token mit ads_read).
