@@ -53,7 +53,7 @@ const FLOW_TONES = ["bg-brand-100", "bg-brand-200", "bg-brand-200", "bg-brand-30
 const FLOW_TEXT = ["text-brand-900", "text-brand-900", "text-brand-900", "text-brand-900", "text-white", "text-white", "text-white"];
 
 function greeting(d: Date): string {
-  const h = Number(new Intl.DateTimeFormat("de-CH", { hour: "numeric", hour12: false, timeZone: "Europe/Zurich" }).format(d));
+  const h = Number(new Intl.DateTimeFormat("en-GB", { hour: "2-digit", hourCycle: "h23", timeZone: "Europe/Zurich" }).formatToParts(d).find((p) => p.type === "hour")?.value ?? 12);
   if (h < 11) return "Guten Morgen";
   if (h < 17) return "Guten Tag";
   return "Guten Abend";
@@ -123,7 +123,11 @@ function AgendaRow({ item }: { item: AgendaItem }) {
             </span>
           ) : null}
           <span className={cn("w-[5.5rem] text-right text-xs tabular-nums", item.overdueDays > 0 ? "font-medium text-rose-600" : "text-neutral-400")}>
-            {item.overdueDays > 0 ? `seit ${item.overdueDays} ${item.overdueDays === 1 ? "Tag" : "Tagen"}` : "heute"}
+            {item.overdueDays > 0
+              ? `seit ${item.overdueDays} ${item.overdueDays === 1 ? "Tag" : "Tagen"}`
+              : item.date
+                ? `${WEEKDAY[new Date(`${item.date}T12:00:00Z`).getUTCDay()]} ${Number(item.date.slice(8, 10))}.${Number(item.date.slice(5, 7))}.`
+                : "heute"}
           </span>
         </span>
       </Link>
@@ -154,8 +158,8 @@ function PulseRow({ label, value, sub, href }: { label: string; value: string; s
 function Section({ title, aside, children, className }: { title: string; aside?: React.ReactNode; children: React.ReactNode; className?: string }) {
   return (
     <section className={cn("rounded-2xl border border-neutral-200 bg-white p-5 sm:p-6", className)}>
-      <header className="mb-4 flex items-baseline justify-between gap-3">
-        <h2 className="text-[13px] font-semibold uppercase tracking-[0.08em] text-neutral-500">{title}</h2>
+      <header className="mb-4 flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
+        <h2 className="shrink-0 whitespace-nowrap text-[13px] font-semibold uppercase tracking-[0.08em] text-neutral-500">{title}</h2>
         {aside}
       </header>
       {children}
@@ -241,10 +245,23 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
           }
         >
           {shown.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-12 text-center">
-              <CircleCheck className="h-8 w-8 text-emerald-500" aria-hidden />
-              <p className="mt-3 text-sm font-medium text-neutral-800">Alles erledigt.</p>
-              <p className="mt-1 text-sm text-neutral-500">Keine fälligen Aufgaben, Follow-ups oder Termine{onlyMine ? " für dich" : ""}.</p>
+            <div>
+              <div className="flex items-center gap-3 rounded-xl bg-emerald-50/70 px-4 py-3">
+                <CircleCheck className="h-5 w-5 shrink-0 text-emerald-600" aria-hidden />
+                <p className="text-sm text-emerald-900">
+                  <span className="font-medium">Heute nichts fällig.</span> Keine offenen Aufgaben, Follow-ups oder Termine{onlyMine ? " für dich" : ""}.
+                </p>
+              </div>
+              {home && home.upcoming.length ? (
+                <>
+                  <p className="mb-1 mt-5 px-2 text-xs font-medium text-neutral-500">Demnächst</p>
+                  <ul>
+                    {home.upcoming.map((a) => (
+                      <AgendaRow key={a.id} item={a} />
+                    ))}
+                  </ul>
+                </>
+              ) : null}
             </div>
           ) : (
             <>
@@ -285,6 +302,14 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
               <PulseRow label="Neue Leads · 7 Tage" value={String(home.newLeads7)} sub={<Delta cur={home.newLeads7} prev={home.newLeadsPrev7} />} href="/sales/leads?sort=created_at&dir=desc" />
             ) : null}
             {home ? <PulseRow label="Noch nicht kontaktiert" value={String(home.uncontacted)} href="/sales/leads?status=neu" /> : null}
+            {home ? (
+              <PulseRow
+                label="Offen ohne nächsten Schritt"
+                value={String(home.withoutNext)}
+                sub={home.withoutNext > 0 ? <span className="text-xs text-amber-700">Follow-up planen</span> : undefined}
+                href="/sales/followups"
+              />
+            ) : null}
             {home ? <PulseRow label="Termine · nächste 7 Tage" value={String(home.meetingsWeek)} href="/calendar" /> : null}
             {sales && sales.pipelineValue > 0 ? <PulseRow label="Pipeline-Wert" value={formatCHF(sales.pipelineValue)} href="/sales/pipeline" /> : null}
             {finance ? <PulseRow label="Wiederkehrender Umsatz (MRR)" value={formatCHF(finance.mrr)} href="/finance" /> : null}
@@ -332,12 +357,12 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
               );
             })}
           </div>
-          <ol className="mt-3 grid grid-cols-2 gap-x-4 gap-y-2 sm:grid-cols-4 lg:grid-cols-8">
+          <ol className="mt-3 grid grid-cols-2 gap-x-5 gap-y-2 sm:grid-cols-4 xl:grid-cols-8">
             {[...flow.active, flow.won].map((s, i) => (
               <li key={s.key}>
                 <Link href={`/sales/leads?status=${s.key}`} className="group flex items-center gap-2 text-xs text-neutral-600 hover:text-neutral-900">
                   <span className={cn("h-2.5 w-2.5 shrink-0 rounded-sm", s.key === "abgeschlossen" ? "bg-emerald-600" : FLOW_TONES[i])} aria-hidden />
-                  <span className="truncate">{s.label}</span>
+                  <span className="leading-tight">{s.label}</span>
                   <span className="ml-auto tabular-nums text-neutral-400 group-hover:text-neutral-700">{s.count}</span>
                 </Link>
               </li>

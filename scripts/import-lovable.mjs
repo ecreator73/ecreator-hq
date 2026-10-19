@@ -129,7 +129,8 @@ for (const l of X.leads) {
     assigned_to_name: owner?.name ?? null,
     assigned_to_email: owner?.email ?? null,
     notes: l.notes ?? prev?.notes ?? null,
-    next_action_date: l.next_action_date ?? prev?.next_action_date ?? null,
+    // 26.06.2026 = Sammeldatum des Alt-Imports (kein echtes Follow-up) -> Lovable-Stand
+    next_action_date: l.next_action_date ?? (prev?.next_action_date === "2026-06-26" ? null : prev?.next_action_date ?? null),
     dienstleistung: l.dienstleistung ?? md.dienstleistung ?? null,
     campaign_name: md.campaign_name ?? null,
     form_name: md.form_name ?? null,

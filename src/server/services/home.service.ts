@@ -23,6 +23,8 @@ export interface AgendaItem {
   overdueDays: number;
   owner: string | null;
   mine: boolean;
+  /** nur bei «Demnaechst»: YYYY-MM-DD */
+  date?: string;
 }
 
 export interface LeadFlowStage {
@@ -65,7 +67,7 @@ export const homeService = {
 
     const [statusRes, leadRows, followRes, newRes, taskRes, events, prevWeekRes] = await Promise.all([
       supabase.from("statuses").select("id, key").eq("entity_type", "lead"),
-      supabase.from("leads").select("status_id").is("deleted_at", null),
+      supabase.from("leads").select("status_id, next_action_date").is("deleted_at", null),
       supabase
         .from("leads")
         .select("id, contact_name, company_name, next_action_date, owner_id, status:statuses!leads_status_id_fkey(key,label), owner:profiles!leads_owner_id_fkey(full_name)")
@@ -95,9 +97,11 @@ export const homeService = {
     // Lead-Fluss
     const keyById = new Map(((statusRes.data ?? []) as Array<{ id: string; key: string }>).map((s) => [s.id, s.key]));
     const counts = new Map<string, number>();
-    for (const r of (leadRows.data ?? []) as Array<{ status_id: string }>) {
+    let withoutNext = 0;
+    for (const r of (leadRows.data ?? []) as Array<{ status_id: string; next_action_date: string | null }>) {
       const k = keyById.get(r.status_id) ?? "andere";
       counts.set(k, (counts.get(k) ?? 0) + 1);
+      if (ACTIVE_FLOW.includes(k) && !r.next_action_date) withoutNext++;
     }
     const label = (k: string) => LEAD_STATUSES.find((s) => s.key === k)?.label ?? k;
     const stage = (k: string): LeadFlowStage => ({ key: k, label: label(k), count: counts.get(k) ?? 0 });
@@ -128,7 +132,7 @@ export const homeService = {
         id: `f-${l.id}`,
         kind: "followup",
         title: l.contact_name || l.company_name,
-        context: `Follow-up · ${l.status?.label ?? ""}`,
+        context: [l.company_name && l.company_name !== l.contact_name ? l.company_name : null, l.status?.label].filter(Boolean).join(" · ") || null,
         href: `/sales/leads/${l.id}`,
         overdueDays: Math.max(0, daysBetween(l.next_action_date, today)),
         owner: l.owner?.full_name ?? null,
@@ -152,6 +156,12 @@ export const homeService = {
     // Ueberfaellig zuerst (aelteste oben), dann Termine, dann der Rest
     const order: Record<AgendaKind, number> = { meeting: 0, shoot: 1, followup: 2, task: 3, reporting: 4, deadline: 5, contract: 6, launch: 7 };
     agenda.sort((a, b) => b.overdueDays - a.overdueDays || order[a.kind] - order[b.kind]);
+
+    // Demnaechst (naechste 6 Tage, ohne heute) - fuer ruhige Tage
+    const upcoming: AgendaItem[] = events
+      .filter((e) => e.date > today && KIND[e.category])
+      .slice(0, 6)
+      .map((e) => ({ id: `u-${e.id}`, kind: KIND[e.category]!, title: e.title, context: e.subtitle, href: e.href, overdueDays: 0, owner: null, mine: false, date: e.date }));
 
     // Woche
     const week: WeekDay[] = [];
@@ -181,6 +191,8 @@ export const homeService = {
       newLeads7: newRes.count ?? newLeads.length,
       newLeadsPrev7: prevWeekRes.count ?? null,
       uncontacted: counts.get("neu") ?? 0,
+      withoutNext,
+      upcoming,
       meetingsWeek: events.filter((e) => e.category === "meeting").length,
     };
   },
