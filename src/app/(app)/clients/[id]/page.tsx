@@ -25,17 +25,22 @@ import type {
   Contact,
   InvoiceWithClient,
 } from "@/types/entities";
+import { clientLeadsService, clientCrmService, summarize } from "@/server/services/client-leads.service";
+import type { TabKey } from "./detail-ui";
 import { ClientDetail } from "./client-detail";
 
 export const metadata: Metadata = { title: "Kunde" };
 
 export default async function ClientDetailPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ id: string }>;
+  searchParams: Promise<{ tab?: string }>;
 }) {
   await requireUser();
   const { id } = await params;
+  const { tab } = await searchParams;
 
   // Unabhaengige Abrufe parallel.
   const [
@@ -50,6 +55,7 @@ export default async function ClientDetailPage({
     contacts,
     invoices,
     optionsResult,
+    clientLeads,
   ] = await Promise.all([
     clientsOpsService.getWithStats(id).catch(() => null),
     projectsService
@@ -84,8 +90,13 @@ export default async function ClientDetailPage({
       .list({ clientId: id })
       .catch((): InvoiceWithClient[] => []),
     clientFormOptionsAction().catch(() => ({ ok: false as const, error: "" })),
+    clientLeadsService.listByClient(id).catch(() => []),
   ]);
   if (!client) notFound();
+
+  const contractItems = await clientCrmService.contractItems(contracts.map((c) => c.id)).catch(() => []);
+  const TAB_KEYS: TabKey[] = ["overview", "projects", "tasks", "leads", "reporting", "contracts", "files", "billing", "finance", "activity", "notes"];
+  const initialTab = TAB_KEYS.find((k) => k === tab);
 
   const users =
     optionsResult.ok && optionsResult.data ? optionsResult.data.users : [];
@@ -103,6 +114,9 @@ export default async function ClientDetailPage({
       contacts={contacts}
       invoices={invoices}
       users={users}
+      leadSummary={summarize(clientLeads)}
+      contractItems={contractItems}
+      initialTab={initialTab}
     />
   );
 }

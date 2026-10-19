@@ -100,8 +100,10 @@ export const MAIN_NAV: NavItem[] = [
     children: [
       { label: "Dashboard", href: "/clients" },
       { label: "Kundenliste", href: "/clients/list" },
-      { label: "Onboarding", href: "/clients/onboarding" },
+      { label: "Kunden-Leads", href: "/clients/leads" },
       { label: "Reporting-Calls", href: "/clients/reporting" },
+      { label: "Onboarding", href: "/clients/onboarding" },
+      { label: "Verträge & Produkte", href: "/clients/contracts" },
       { label: "Projekte", href: "/clients/projects" },
       { label: "Meetings", href: "/operations/meetings" },
       { label: "Offboarding", href: "/clients/offboarding" },

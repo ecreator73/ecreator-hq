@@ -7,7 +7,11 @@ import { cn } from "@/lib/utils";
 const TABS = [
   { label: "Dashboard", href: "/clients" },
   { label: "Kundenliste", href: "/clients/list" },
+  { label: "Kunden-Leads", href: "/clients/leads" },
   { label: "Reporting-Calls", href: "/clients/reporting" },
+  { label: "Onboarding", href: "/clients/onboarding" },
+  { label: "Verträge & Produkte", href: "/clients/contracts" },
+  { label: "Offboarding", href: "/clients/offboarding" },
 ];
 
 export function ClientsNav() {

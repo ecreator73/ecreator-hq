@@ -11,6 +11,7 @@ export default async function ClientsLayout({
   await requireUser();
   return (
     <div className="space-y-6">
+      <div className="space-y-6 print:hidden">
       <PageHeader
         eyebrow="Clients"
         title="Client Management"
@@ -18,6 +19,7 @@ export default async function ClientsLayout({
         actions={<ClientQuickCreate />}
       />
       <ClientsNav />
+      </div>
       <div>{children}</div>
     </div>
   );

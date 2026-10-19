@@ -30,6 +30,32 @@ function callTime(rc: ReportingCallWithRelations): number {
   return rc.scheduled_date ? new Date(rc.scheduled_date).getTime() : 0;
 }
 
+/** Ausgearbeitete Report-Texte aus dem Kunden-CRM (Reihenfolge = Lesefluss). */
+const AI_KEYS: Array<[string, string]> = [
+  ["headline", "Kernaussage"],
+  ["summary_intro", "Einleitung"],
+  ["key_findings", "Wichtigste Erkenntnisse"],
+  ["insights", "Einblicke"],
+  ["recommendations", "Empfehlungen"],
+  ["fazit", "Fazit"],
+  ["manager", "Notiz Projektleitung"],
+];
+
+const NL = "\n";
+
+function aiText(v: unknown): string | null {
+  if (v == null || v === "") return null;
+  if (typeof v === "string") return v;
+  if (Array.isArray(v)) return v.map((x) => (typeof x === "string" ? `• ${x}` : `• ${aiText(x) ?? ""}`)).join(NL);
+  if (typeof v === "object") {
+    const o = v as Record<string, unknown>;
+    if (typeof o.text === "string") return o.text;
+    if (typeof o.title === "string" || typeof o.description === "string") return [o.title, o.description].filter(Boolean).join(": ");
+    return Object.values(o).map((x) => aiText(x)).filter(Boolean).join(NL);
+  }
+  return String(v);
+}
+
 export function ReportingTab({
   clientId,
   calls,
@@ -149,7 +175,9 @@ export function ReportingTab({
                 Boolean(rc.summary) ||
                 Boolean(rc.next_steps) ||
                 Boolean(rc.agenda) ||
-                Boolean(rc.notes);
+                Boolean(rc.notes) ||
+                Boolean(rc.ai_texts && Object.keys(rc.ai_texts).length);
+              const m = rc.metrics as { leads?: number; conversions?: number } | null | undefined;
               const rowBusy = pending && busyId === rc.id;
               return (
                 <li
@@ -161,10 +189,22 @@ export function ReportingTab({
                       <span className="text-sm font-medium tabular-nums text-neutral-900">
                         {rc.scheduled_date ? formatDate(rc.scheduled_date) : "Offen"}
                       </span>
+                      {rc.title ? <span className="truncate text-sm text-neutral-700">{rc.title}</span> : null}
+                      {rc.period_from ? (
+                        <span className="text-xs text-neutral-500">
+                          Zeitraum {formatDate(rc.period_from)}
+                          {rc.period_to ? ` – ${formatDate(rc.period_to)}` : ""}
+                        </span>
+                      ) : null}
                       <StatusBadge
                         label={statusLabel("reporting_call", rc.status)}
                         color={statusColorOf("reporting_call", rc.status)}
                       />
+                      {m && (m.leads != null || m.conversions != null) ? (
+                        <span className="text-xs tabular-nums text-neutral-500">
+                          {m.leads ?? 0} Leads · {m.conversions ?? 0} Abschlüsse
+                        </span>
+                      ) : null}
                       {rc.owner?.full_name ? (
                         <span className="truncate text-xs text-neutral-500">
                           {rc.owner.full_name}
@@ -210,6 +250,9 @@ export function ReportingTab({
                         />
                         <DetailBlock label="Next Steps" value={rc.next_steps} />
                         <DetailBlock label="Notizen" value={rc.notes} />
+                        {AI_KEYS.map(([k, l]) => (
+                          <DetailBlock key={k} label={l} value={aiText(rc.ai_texts?.[k])} />
+                        ))}
                         {rc.next_steps ? (
                           <div className="pt-1">
                             <Button

@@ -69,6 +69,37 @@ export interface Client extends AuditedEntity {
   start_date: string | null;
   notes: string | null;
   package: string | null;
+  // Aus dem Kunden-CRM (Migration 0026), alle optional
+  legacy_id?: string | null;
+  contact_name?: string | null;
+  zip_code?: string | null;
+  contact_birthday?: string | null;
+  uid?: string | null;
+  logo_url?: string | null;
+  instagram_url?: string | null;
+  facebook_url?: string | null;
+  drive_url?: string | null;
+  /** Rappen */
+  monthly_gross?: number | null;
+  /** Rappen */
+  monthly_commission?: number | null;
+  /** Rappen */
+  setup_fee?: number | null;
+  contract_start_date?: string | null;
+  contract_end_date?: string | null;
+  contract_duration?: string | null;
+  minimum_term_months?: number | null;
+  cancellation_notice?: string | null;
+  financial_notes?: string | null;
+  billing_name?: string | null;
+  billing_contact?: string | null;
+  billing_address?: string | null;
+  billing_zip?: string | null;
+  billing_city?: string | null;
+  billing_email?: string | null;
+  billing_email_cc?: string | null;
+  reporting_status_map?: Record<string, string> | null;
+  external_client_ids?: string[] | null;
 }
 
 export interface Contact extends AuditedEntity {
@@ -145,6 +176,19 @@ export interface Contract extends AuditedEntity {
   status: ContractStatus;
   document_url: string | null;
   offer_id: string | null;
+  // Aus dem Kunden-CRM (Migration 0026), alle optional
+  contract_number?: string | null;
+  duration_months?: number | null;
+  renewal_months?: number | null;
+  auto_renew?: boolean | null;
+  billing_day?: number | null;
+  payment_days?: number | null;
+  payment_terms?: string | null;
+  cancelled_at?: string | null;
+  signed_at?: string | null;
+  signed_name?: string | null;
+  sent_at?: string | null;
+  notes?: string | null;
 }
 
 /* --------------------------------------------------------------------------
@@ -232,6 +276,13 @@ export interface ReportingCall extends AuditedEntity {
   summary: string | null;
   next_steps: string | null;
   responsibilities: string | null;
+  // Aus dem Kunden-CRM (Migration 0026), optional
+  title?: string | null;
+  period_from?: string | null;
+  period_to?: string | null;
+  done_at?: string | null;
+  metrics?: Record<string, unknown> | null;
+  ai_texts?: Record<string, unknown> | null;
 }
 
 export interface ReportingCallWithRelations extends ReportingCall {

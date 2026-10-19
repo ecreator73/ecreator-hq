@@ -15,7 +15,7 @@ import type { ClientWithStats } from "@/types/entities";
 const selectClass =
   "h-9 rounded-lg border border-neutral-300 bg-white px-2.5 text-sm text-neutral-700 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-100";
 
-export function ClientsTable({ clients }: { clients: ClientWithStats[] }) {
+export function ClientsTable({ clients, leads30 }: { clients: ClientWithStats[]; leads30?: Record<string, number> }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [selected, setSelected] = useState<Set<string>>(new Set());
@@ -106,6 +106,7 @@ export function ClientsTable({ clients }: { clients: ClientWithStats[] }) {
               <th className="px-4 py-2.5 font-medium">Status</th>
               <th className="px-4 py-2.5 font-medium">Paket</th>
               <th className="px-4 py-2.5 text-right font-medium">MRR</th>
+              {leads30 ? <th className="px-4 py-2.5 text-right font-medium" title="Kampagnen-Leads der letzten 30 Tage">Leads 30 T.</th> : null}
               <th className="px-4 py-2.5 font-medium">Start</th>
               <th className="px-4 py-2.5 font-medium">Letzter Kontakt</th>
               <th className="px-4 py-2.5 font-medium">Naechster Reporting</th>
@@ -134,6 +135,7 @@ export function ClientsTable({ clients }: { clients: ClientWithStats[] }) {
                   >
                     {c.name}
                   </Link>
+                  {c.contact_name && c.contact_name.trim() !== c.name.trim() ? <p className="text-xs text-neutral-500">{c.contact_name}</p> : null}
                 </td>
                 <td className="px-4 py-2.5">
                   <StatusBadge
@@ -149,6 +151,17 @@ export function ClientsTable({ clients }: { clients: ClientWithStats[] }) {
                 <td className="px-4 py-2.5 text-right tabular-nums text-neutral-700">
                   {formatCHF(c.mrr)}
                 </td>
+                {leads30 ? (
+                  <td className="px-4 py-2.5 text-right tabular-nums text-neutral-700">
+                    {leads30[c.id] ? (
+                      <Link href={`/clients/${c.id}?tab=leads`} className="hover:text-brand-700">
+                        {leads30[c.id]}
+                      </Link>
+                    ) : (
+                      <span className="text-neutral-400">-</span>
+                    )}
+                  </td>
+                ) : null}
                 <td className="px-4 py-2.5 text-neutral-600">
                   {c.start_date ? formatDate(c.start_date) : "-"}
                 </td>

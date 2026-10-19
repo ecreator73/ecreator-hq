@@ -14,6 +14,7 @@ import { clientsOpsService } from "@/server/services";
 import type { ClientFilters } from "@/server/services";
 import type { ClientWithStats } from "@/types/entities";
 import { clientFormOptionsAction } from "@/app/(app)/clients/actions";
+import { clientLeadsService } from "@/server/services/client-leads.service";
 
 export const metadata: Metadata = { title: "Clients - Kunden" };
 
@@ -35,12 +36,14 @@ export default async function ClientsListPage({
   };
 
   // Unabhaengige Abrufe parallel.
-  const [clients] = await Promise.all([
+  const since = new Date(Date.now() - 30 * 86_400_000).toISOString();
+  const [clients, , leadCounts] = await Promise.all([
     clientsOpsService
       .listWithStats(filters)
       .catch(() => [] as ClientWithStats[]),
     // Optionen werden geladen, damit die Server Action im Demo-Modus nicht wirft.
     clientFormOptionsAction().catch(() => null),
+    clientLeadsService.countsByClient(since).catch(() => new Map<string, number>()),
   ]);
 
   return (
@@ -69,7 +72,7 @@ export default async function ClientsListPage({
             description="Es gibt keine Kunden, die zu den aktuellen Filtern passen. Passe die Filter an oder lege einen neuen Kunden an."
           />
         ) : (
-          <ClientsTable clients={clients} />
+          <ClientsTable clients={clients} leads30={Object.fromEntries(leadCounts)} />
         )}
       </CardContent>
     </Card>

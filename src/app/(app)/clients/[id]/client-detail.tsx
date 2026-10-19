@@ -46,6 +46,9 @@ import { FilesTab } from "./tabs/files-tab";
 import { FinanceTab } from "./tabs/finance-tab";
 import { ActivityTab } from "./tabs/activity-tab";
 import { NotesTab } from "./tabs/notes-tab";
+import { BillingTab } from "./tabs/billing-tab";
+import { ClientLeadsTab } from "@/components/clients/client-leads-tab";
+import type { ClientLeadSummary, ContractItem } from "@/server/services/client-leads.service";
 import type {
   ClientWithStats,
   Project,
@@ -79,6 +82,9 @@ export function ClientDetail({
   contacts,
   invoices,
   users,
+  leadSummary,
+  contractItems,
+  initialTab,
 }: {
   client: ClientWithStats;
   projects: Project[];
@@ -91,9 +97,12 @@ export function ClientDetail({
   contacts: Contact[];
   invoices: InvoiceWithClient[];
   users: ProfileMini[];
+  leadSummary: ClientLeadSummary;
+  contractItems: ContractItem[];
+  initialTab?: TabKey;
 }) {
   const router = useRouter();
-  const [tab, setTab] = useState<TabKey>("overview");
+  const [tab, setTab] = useState<TabKey>(initialTab ?? "overview");
   const [editing, setEditing] = useState(false);
   const [pending, startTransition] = useTransition();
 
@@ -107,9 +116,11 @@ export function ClientDetail({
     { key: "overview", label: "Uebersicht" },
     { key: "projects", label: "Projekte", count: projects.length },
     { key: "tasks", label: "Aufgaben", count: openTasks.length },
+    { key: "leads", label: "Kunden-Leads", count: leadSummary.total },
     { key: "reporting", label: "Reporting Calls", count: reportingCalls.length },
     { key: "contracts", label: "Verträge", count: contracts.length },
     { key: "files", label: "Dateien", count: files.length },
+    { key: "billing", label: "Rechnung & Links" },
     { key: "finance", label: "Finanzen" },
     { key: "activity", label: "Aktivitaet" },
     { key: "notes", label: "Notizen", count: notes.length },
@@ -270,6 +281,10 @@ export function ClientDetail({
           <ProjectsTab clientId={client.id} projects={projects} users={users} />
         ) : tab === "tasks" ? (
           <TasksTab clientId={client.id} tasks={tasks} />
+        ) : tab === "leads" ? (
+          <ClientLeadsTab clientId={client.id} summary={leadSummary} statusMap={client.reporting_status_map ?? {}} />
+        ) : tab === "billing" ? (
+          <BillingTab client={client} contracts={contracts} items={contractItems} />
         ) : tab === "reporting" ? (
           <ReportingTab clientId={client.id} calls={reportingCalls} users={users} />
         ) : tab === "contracts" ? (

@@ -12,7 +12,9 @@ export type TabKey =
   | "files"
   | "finance"
   | "activity"
-  | "notes";
+  | "notes"
+  | "leads"
+  | "billing";
 
 /**
  * Geteiltes Design-Vokabular der Client Detail Page. Sorgt fuer ein
