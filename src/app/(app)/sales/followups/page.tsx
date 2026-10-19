@@ -18,7 +18,7 @@ import { today, tomorrow, weekRange, addDays, isoDay } from "@/lib/dates";
 
 export const metadata: Metadata = { title: "Leads - Follow-ups" };
 
-const OPEN_ONLY = ["abgeschlossen", "absage", "fehleintrag", "andere"];
+const OPEN_ONLY = ["abgeschlossen", "absage", "fehleintrag", "andere", "massenmail"];
 type IconType = React.ComponentType<{ className?: string }>;
 
 /** Kennzahl-Kachel, springt per Anker zum passenden Abschnitt. */

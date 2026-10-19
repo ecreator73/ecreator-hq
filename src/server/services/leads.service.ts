@@ -63,7 +63,7 @@ function mapLead(row: Record<string, unknown>): LeadWithRelations {
 }
 
 /** Abschluss-Status ohne Follow-up-Pflicht. */
-const TERMINAL_LEAD_STATUSES = ["abgeschlossen", "absage", "fehleintrag", "andere"];
+const TERMINAL_LEAD_STATUSES = ["abgeschlossen", "absage", "fehleintrag", "andere", "massenmail"];
 
 function enforceFollowup(status: string, nextAction: unknown): void {
   if (TERMINAL_LEAD_STATUSES.includes(status)) return;

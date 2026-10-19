@@ -16,7 +16,7 @@ function isFresh(lead: LeadWithRelations): boolean {
   return Date.now() - new Date(lead.created_at).getTime() < 48 * 60 * 60 * 1000;
 }
 
-const TERMINAL = ["abgeschlossen", "absage", "fehleintrag", "andere"];
+const TERMINAL = ["abgeschlossen", "absage", "fehleintrag", "andere", "massenmail"];
 function overdue(lead: LeadWithRelations): boolean {
   if (!lead.next_action_date) return false;
   if (TERMINAL.includes(lead.status?.key ?? "")) return false;

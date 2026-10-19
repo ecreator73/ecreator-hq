@@ -36,7 +36,7 @@ export const salesDashboardService = {
     );
     const today = todayISO();
     // Terminal-Status (normalisiertes Set) - zaehlen nicht zur offenen Pipeline.
-    const dead = ["abgeschlossen", "absage", "fehleintrag", "andere"]
+    const dead = ["abgeschlossen", "absage", "fehleintrag", "andere", "massenmail"]
       .map((k) => byKey.get(k))
       .filter(Boolean) as string[];
 

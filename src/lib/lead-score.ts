@@ -16,6 +16,7 @@ const STAGE_SCORE: Record<string, number> = {
   absage: 0,
   fehleintrag: 0,
   andere: 5,
+  massenmail: 8,
 };
 
 const SIZE_BONUS: Record<string, number> = {

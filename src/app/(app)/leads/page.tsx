@@ -18,7 +18,7 @@ import { today } from "@/lib/dates";
 export const metadata: Metadata = { title: "Leads - Dashboard" };
 
 /** Status, die nicht mehr aktiv bearbeitet werden. */
-const TERMINAL_STATUSES = ["abgeschlossen", "absage", "fehleintrag", "andere"];
+const TERMINAL_STATUSES = ["abgeschlossen", "absage", "fehleintrag", "andere", "massenmail"];
 
 const EMPTY_SUMMARY: SalesDashboardData = {
   newLeads: 0,

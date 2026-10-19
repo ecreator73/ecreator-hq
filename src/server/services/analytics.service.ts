@@ -29,7 +29,7 @@ export interface AnalyticsOverview {
 /** Abschluss-Status (zaehlen als "gewonnen"). */
 const WON = new Set(["abgeschlossen", "vertrag_mail"]);
 /** Terminal = nicht mehr offen. */
-const TERMINAL = new Set(["abgeschlossen", "vertrag_mail", "absage", "fehleintrag", "andere"]);
+const TERMINAL = new Set(["abgeschlossen", "vertrag_mail", "absage", "fehleintrag", "andere", "massenmail"]);
 
 const SOURCE_LABELS: Record<string, string> = {
   meta_ads: "Meta Ads",

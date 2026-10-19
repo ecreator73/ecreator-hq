@@ -14,7 +14,7 @@ const STATUS_MAP = new Map<string, { key: string; label: string; color: string }
 );
 
 /** Abschluss-Status - lassen sich ausblenden, damit das Board arbeitsfaehig bleibt. */
-const TERMINAL = new Set(["abgeschlossen", "absage", "fehleintrag", "andere"]);
+const TERMINAL = new Set(["abgeschlossen", "absage", "fehleintrag", "andere", "massenmail"]);
 
 /** Farbakzent je Status (Katalogfarbe -> Tailwind). */
 const DOT: Record<string, string> = {

@@ -95,6 +95,7 @@ export const LEAD_STATUSES = [
   { key: "absage", label: "Absage", color: "red" },
   { key: "fehleintrag", label: "Fehleintrag", color: "gray" },
   { key: "andere", label: "Andere", color: "gray" },
+  { key: "massenmail", label: "Massenmail", color: "gray" },
 ] as const satisfies readonly CatalogEntry[];
 
 /* Phase 19 - LinkedIn Sales: Prospect-Status (TS-Spiegel des DB-Seeds 0021) */
@@ -555,6 +556,7 @@ export const SALES_ACTIVITY_TYPES = [
   { key: "offer", label: "Angebot" },
   { key: "note", label: "Notiz" },
   { key: "followup", label: "Follow-up" },
+  { key: "status", label: "Statuswechsel" },
 ] as const;
 export const SALES_ACTIVITY_TYPE_KEYS = SALES_ACTIVITY_TYPES.map(
   (t) => t.key,
