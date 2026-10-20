@@ -85,6 +85,10 @@
     size: A4;
     margin: 16mm;
   }
+  @page qrbill {
+    size: A4;
+    margin: 0;
+  }
 
   html,
   body {
@@ -106,6 +110,12 @@
   * {
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
+  }
+
+  /* QR-Zahlteil: eigene A4-Seite ohne Rand (Swiss Payment Standards, 210 x 105 mm) */
+  .qr-page {
+    page: qrbill;
+    break-before: page;
   }
 
   /* Zeilen/Bloecke nicht ueber Seiten zerreissen */

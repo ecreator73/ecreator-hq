@@ -39,3 +39,9 @@ export function formatCHF(
     maximumFractionDigits: 0,
   }).format(rappen / 100);
 }
+
+/** Geldbetrag aus Rappen rappengenau (2 Nachkommastellen), fuer Rechnungen. */
+export function formatCHFExact(rappen: number | null | undefined, currency = "CHF"): string {
+  if (rappen == null) return "-";
+  return new Intl.NumberFormat("de-CH", { style: "currency", currency, minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(rappen / 100);
+}

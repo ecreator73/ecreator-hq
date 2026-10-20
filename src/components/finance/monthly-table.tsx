@@ -285,8 +285,16 @@ function EntryRow({
     });
   }
 
+  const meta = [
+    entry.category,
+    entry.contract_start ? `Start ${entry.contract_start}` : null,
+    entry.contract_duration,
+    entry.commission ? `Provision ${formatCHF(entry.commission)}` : null,
+  ].filter(Boolean);
+
   return (
-    <div className="flex items-center gap-1 px-2 py-1">
+    <div className="px-2 py-1">
+    <div className="flex items-center gap-1">
       <input
         value={label}
         onChange={(e) => setLabel(e.target.value)}
@@ -315,6 +323,12 @@ function EntryRow({
           <Trash2 className="h-4 w-4" />
         )}
       </button>
+    </div>
+    {meta.length || entry.note ? (
+      <p className="truncate px-2 pb-1 text-[11px] text-neutral-400" title={entry.note ?? undefined}>
+        {[meta.join(" · "), entry.note].filter(Boolean).join(" — ")}
+      </p>
+    ) : null}
     </div>
   );
 }

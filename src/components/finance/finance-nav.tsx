@@ -8,8 +8,8 @@ const TABS = [
   { label: "Dashboard", href: "/finance" },
   { label: "Rechnungen", href: "/finance/invoices" },
   { label: "Offene Posten", href: "/finance/open" },
-  { label: "Kosten", href: "/finance/expenses" },
-  { label: "Umsatz", href: "/finance/monthly" },
+  { label: "Ausgaben", href: "/finance/expenses" },
+  { label: "Umsatz & Kosten", href: "/finance/monthly" },
   { label: "Kalender", href: "/finance/calendar" },
 ];
 

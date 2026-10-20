@@ -136,10 +136,10 @@ export const MAIN_NAV: NavItem[] = [
     roles: FINANCE_ROLES,
     children: [
       { label: "Dashboard", href: "/finance" },
-      { label: "Umsatz", href: "/finance/monthly" },
+      { label: "Umsatz & Kosten", href: "/finance/monthly" },
       { label: "Rechnungen", href: "/finance/invoices" },
       { label: "Offene Posten", href: "/finance/open" },
-      { label: "Kosten", href: "/finance/expenses" },
+      { label: "Ausgaben", href: "/finance/expenses" },
     ],
   },
   {

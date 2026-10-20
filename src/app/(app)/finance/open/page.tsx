@@ -1,224 +1,122 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { AlertTriangle, CalendarClock, CalendarRange, Clock } from "lucide-react";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { EmptyState } from "@/components/ui/empty-state";
-import { StatusSelect } from "@/components/production/status-select";
-import { invoicesService } from "@/server/services";
-import { setInvoiceStatusAction } from "@/app/(app)/finance/actions";
-import type { InvoiceWithClient } from "@/types/entities";
-import { INVOICE_STATUSES } from "@/config/catalog";
-import { formatCHF, formatDate } from "@/lib/utils";
-import { today, weekRange } from "@/lib/dates";
-import { isInvoiceOverdue } from "@/lib/finance";
+import { billingService, type BillingInvoice } from "@/server/services/billing.service";
+import { BankImport } from "@/components/finance/bank-import";
+import { formatCHFExact, cn } from "@/lib/utils";
 
-export const metadata: Metadata = { title: "Finance - Offene Rechnungen" };
+export const metadata: Metadata = { title: "Finance - Offene Posten" };
 
-function InvoiceRow({ inv }: { inv: InvoiceWithClient }) {
-  return (
-    <tr className="align-top hover:bg-neutral-50">
-      <td className="px-4 py-2.5 tabular-nums text-neutral-600">
-        {inv.invoice_number ?? "-"}
-      </td>
-      <td className="px-4 py-2.5">
-        <Link
-          href={`/finance/invoices/${inv.id}`}
-          className="font-medium text-neutral-900 hover:text-brand-700"
-        >
-          {inv.title ?? "(ohne Titel)"}
-        </Link>
-      </td>
-      <td className="px-4 py-2.5 text-neutral-700">
-        {inv.client?.name ?? "-"}
-      </td>
-      <td className="px-4 py-2.5 text-right tabular-nums text-neutral-900">
-        {formatCHF(inv.amount ?? 0)}
-      </td>
-      <td className="px-4 py-2.5 text-neutral-600">
-        {inv.due_date ? formatDate(inv.due_date) : "-"}
-      </td>
-      <td className="px-4 py-2.5">
-        <StatusSelect
-          id={inv.id}
-          value={inv.status}
-          statuses={INVOICE_STATUSES}
-          action={setInvoiceStatusAction}
-        />
-      </td>
-    </tr>
-  );
+const DAY = 86_400_000;
+const chDate = (d: string | null | undefined) => (d ? `${d.slice(8, 10)}.${d.slice(5, 7)}.${d.slice(0, 4)}` : "–");
+const BUCKETS = [
+  { key: "due", label: "Noch nicht fällig", tone: "bg-sky-500" },
+  { key: "d30", label: "1–30 Tage überfällig", tone: "bg-amber-400" },
+  { key: "d60", label: "31–60 Tage", tone: "bg-orange-500" },
+  { key: "d60p", label: "über 60 Tage", tone: "bg-rose-600" },
+] as const;
+
+function bucket(daysOver: number) {
+  if (daysOver <= 0) return "due";
+  if (daysOver <= 30) return "d30";
+  if (daysOver <= 60) return "d60";
+  return "d60p";
 }
 
-function Section({
-  title,
-  description,
-  icon: Icon,
-  tone,
-  invoices,
-}: {
-  title: string;
-  description: string;
-  icon: React.ComponentType<{ className?: string }>;
-  tone: "danger" | "amber" | "brand" | "neutral";
-  invoices: InvoiceWithClient[];
-}) {
-  const total = invoices.reduce((sum, inv) => sum + (inv.amount ?? 0), 0);
-  const toneClass = {
-    danger: "text-red-600",
-    amber: "text-amber-600",
-    brand: "text-brand-600",
-    neutral: "text-neutral-500",
-  }[tone];
+export default async function OpenItemsPage() {
+  const all = await billingService.list().catch((): BillingInvoice[] => []);
+  const today = new Date().toISOString().slice(0, 10);
+  const items = all
+    .filter((i) => i.status === "open" && i.total - i.paid > 0)
+    .map((i) => {
+      const over = i.due_date ? Math.floor((Date.parse(today) - Date.parse(i.due_date)) / DAY) : 0;
+      return { ...i, open: i.total - i.paid, over, bucket: bucket(over) };
+    })
+    .sort((a, b) => b.over - a.over);
+  const total = items.reduce((s, i) => s + i.open, 0);
+  const byBucket = Object.fromEntries(BUCKETS.map((b) => [b.key, items.filter((i) => i.bucket === b.key).reduce((s, i) => s + i.open, 0)]));
+  const byClient = [...items.reduce((m, i) => m.set(i.client?.name ?? "Ohne Kunde", (m.get(i.client?.name ?? "Ohne Kunde") ?? 0) + i.open), new Map<string, number>())].sort((a, b) => b[1] - a[1]);
+  const refs = all.filter((i) => i.qr_reference && i.status !== "cancelled" && i.status !== "draft").map((i) => ({ ref: i.qr_reference!, number: i.invoice_number ?? "", open: i.total - i.paid }));
 
   return (
-    <Card>
-      <CardHeader className="gap-1">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <CardTitle className="flex items-center gap-2">
-            <Icon className={`h-4 w-4 ${toneClass}`} />
-            {title} ({invoices.length})
-          </CardTitle>
-          {invoices.length > 0 ? (
-            <span className="text-sm font-medium tabular-nums text-neutral-700">
-              {formatCHF(total)}
-            </span>
-          ) : null}
+    <div className="space-y-5">
+      <section className="rounded-xl border border-neutral-200 bg-white p-5">
+        <div className="flex flex-wrap items-end justify-between gap-3">
+          <div>
+            <p className="text-xs text-neutral-500">Offene Posten</p>
+            <p className="text-3xl font-semibold tabular-nums text-neutral-900">{formatCHFExact(total)}</p>
+            <p className="text-xs text-neutral-400">{items.length} freigegebene, nicht bezahlte Rechnungen (inkl. MWST)</p>
+          </div>
+          <ul className="flex flex-wrap gap-x-5 gap-y-1 text-xs text-neutral-600">
+            {BUCKETS.map((b) => (
+              <li key={b.key} className="inline-flex items-center gap-1.5">
+                <span className={cn("h-2.5 w-2.5 rounded-sm", b.tone)} aria-hidden /> {b.label} <span className="font-medium tabular-nums text-neutral-900">{formatCHFExact(byBucket[b.key])}</span>
+              </li>
+            ))}
+          </ul>
         </div>
-        <p className="text-sm text-neutral-500">{description}</p>
-      </CardHeader>
-      <CardContent>
-        {invoices.length === 0 ? (
-          <EmptyState
-            title="Nichts in diesem Bereich"
-            description="Aktuell gibt es hier keine Rechnungen."
-          />
-        ) : (
-          <div className="overflow-x-auto rounded-lg border border-neutral-200">
-            <table className="w-full min-w-[48rem] text-sm">
-              <thead>
-                <tr className="border-b border-neutral-200 text-left text-xs uppercase tracking-wide text-neutral-400">
-                  <th className="px-4 py-2.5 font-medium">Nr</th>
-                  <th className="px-4 py-2.5 font-medium">Titel</th>
-                  <th className="px-4 py-2.5 font-medium">Kunde</th>
-                  <th className="px-4 py-2.5 text-right font-medium">Betrag</th>
-                  <th className="px-4 py-2.5 font-medium">Faellig</th>
-                  <th className="px-4 py-2.5 font-medium">Status</th>
+        {total ? (
+          <div className="mt-4 flex h-3 w-full gap-0.5 overflow-hidden rounded-full" role="img" aria-label="Altersstruktur der offenen Posten">
+            {BUCKETS.map((b) => (byBucket[b.key] ? <span key={b.key} className={b.tone} style={{ flexGrow: byBucket[b.key], flexBasis: 0 }} /> : null))}
+          </div>
+        ) : null}
+      </section>
+
+      <div className="grid gap-5 lg:grid-cols-3">
+        <section className="overflow-x-auto rounded-xl border border-neutral-200 bg-white lg:col-span-2">
+          <h2 className="border-b border-neutral-100 px-4 py-3 text-sm font-semibold text-neutral-900">Rechnungen, älteste Fälligkeit zuerst</h2>
+          {items.length === 0 ? (
+            <p className="px-4 py-8 text-center text-sm text-neutral-500">Keine offenen Posten.</p>
+          ) : (
+            <table className="w-full min-w-[620px] text-sm">
+              <thead className="text-left text-[11px] uppercase tracking-wide text-neutral-500">
+                <tr className="border-b border-neutral-100">
+                  <th className="px-4 py-2">Rechnung</th>
+                  <th className="px-3 py-2">Kunde</th>
+                  <th className="px-3 py-2">Fällig</th>
+                  <th className="px-3 py-2 text-right">Offen</th>
+                  <th className="px-3 py-2">Stand</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-neutral-100">
-                {invoices.map((inv) => (
-                  <InvoiceRow key={inv.id} inv={inv} />
+                {items.map((i) => (
+                  <tr key={i.id} className="hover:bg-neutral-50/70">
+                    <td className="px-4 py-2">
+                      <Link href={`/finance/invoices/${i.id}`} className="font-medium tabular-nums text-neutral-900 hover:text-brand-700">
+                        {i.invoice_number}
+                      </Link>
+                    </td>
+                    <td className="max-w-[200px] truncate px-3 py-2 text-neutral-700">{i.client?.name ?? "–"}</td>
+                    <td className="px-3 py-2 tabular-nums text-neutral-600">{chDate(i.due_date)}</td>
+                    <td className="px-3 py-2 text-right font-medium tabular-nums">{formatCHFExact(i.open)}</td>
+                    <td className="px-3 py-2 text-xs">
+                      {i.over > 0 ? <span className="font-medium text-rose-700">{i.over} Tage überfällig</span> : <span className="text-neutral-500">fällig in {-i.over} Tagen</span>}
+                      {i.reminder_stage ? <span className="ml-1.5 text-amber-700">· Mahnstufe {i.reminder_stage}</span> : null}
+                      {!i.sent_at ? <span className="ml-1.5 text-neutral-400">· nicht als versendet markiert</span> : null}
+                    </td>
+                  </tr>
                 ))}
               </tbody>
             </table>
-          </div>
-        )}
-      </CardContent>
-    </Card>
-  );
-}
-
-export default async function FinanceOpenPage() {
-  const invoices = await invoicesService
-    .list({ statusIn: ["open", "overdue"] })
-    .catch((): InvoiceWithClient[] => []);
-
-  const todayKey = today();
-  const week = weekRange();
-
-  const overdue: InvoiceWithClient[] = [];
-  const dueToday: InvoiceWithClient[] = [];
-  const dueThisWeek: InvoiceWithClient[] = [];
-  const later: InvoiceWithClient[] = [];
-
-  for (const inv of invoices) {
-    if (isInvoiceOverdue(inv, todayKey)) {
-      overdue.push(inv);
-    } else if (inv.due_date === todayKey) {
-      dueToday.push(inv);
-    } else if (
-      inv.due_date &&
-      inv.due_date >= week.from &&
-      inv.due_date <= week.to
-    ) {
-      dueThisWeek.push(inv);
-    } else {
-      later.push(inv);
-    }
-  }
-
-  const totalOpen = invoices.reduce((sum, inv) => sum + (inv.amount ?? 0), 0);
-
-  if (invoices.length === 0) {
-    return (
-      <Card>
-        <CardHeader>
-          <CardTitle>Offene Rechnungen</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <EmptyState
-            title="Keine offenen Rechnungen"
-            description="Alle Rechnungen sind bezahlt oder es wurden noch keine offenen Rechnungen erfasst."
-          />
-        </CardContent>
-      </Card>
-    );
-  }
-
-  return (
-    <div className="space-y-6">
-      <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-neutral-200 bg-white px-4 py-3 shadow-sm">
-        <div>
-          <p className="text-xs uppercase tracking-wide text-neutral-400">
-            Offen insgesamt
-          </p>
-          <p className="text-lg font-semibold tabular-nums text-neutral-900">
-            {formatCHF(totalOpen)}
-          </p>
-        </div>
-        <p className="text-sm text-neutral-500">
-          {invoices.length} offene{invoices.length === 1 ? " Rechnung" : " Rechnungen"}
-          {overdue.length > 0 ? (
-            <span className="ml-1 font-medium text-red-600">
-              ({overdue.length} ueberfaellig)
-            </span>
-          ) : null}
-        </p>
+          )}
+        </section>
+        <section className="rounded-xl border border-neutral-200 bg-white">
+          <h2 className="border-b border-neutral-100 px-4 py-3 text-sm font-semibold text-neutral-900">Nach Kunde</h2>
+          {byClient.length ? (
+            <ul className="divide-y divide-neutral-100">
+              {byClient.map(([name, v]) => (
+                <li key={name} className="flex items-center justify-between gap-3 px-4 py-2 text-sm">
+                  <span className="truncate text-neutral-700">{name}</span>
+                  <span className="shrink-0 tabular-nums font-medium">{formatCHFExact(v)}</span>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="px-4 py-6 text-center text-sm text-neutral-400">–</p>
+          )}
+        </section>
       </div>
 
-      <Section
-        title="Ueberfaellig"
-        description="Faelligkeit ist verstrichen - dringend nachfassen."
-        icon={AlertTriangle}
-        tone="danger"
-        invoices={overdue}
-      />
-      <Section
-        title="Heute faellig"
-        description="Diese Rechnungen sind heute faellig."
-        icon={CalendarClock}
-        tone="amber"
-        invoices={dueToday}
-      />
-      <Section
-        title="Diese Woche faellig"
-        description="Faelligkeit innerhalb der laufenden Woche."
-        icon={CalendarRange}
-        tone="brand"
-        invoices={dueThisWeek}
-      />
-      <Section
-        title="Offen (spaeter)"
-        description="Offene Rechnungen mit spaeterer oder fehlender Faelligkeit."
-        icon={Clock}
-        tone="neutral"
-        invoices={later}
-      />
+      <BankImport known={refs} />
     </div>
   );
 }

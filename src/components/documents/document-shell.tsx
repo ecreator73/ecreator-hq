@@ -18,6 +18,8 @@ export function DocumentShell({
   customerNumber,
   recipient,
   extraMeta,
+  toolbar,
+  appendix,
   children,
 }: {
   backHref: string;
@@ -29,6 +31,10 @@ export function DocumentShell({
   customerNumber?: string | null;
   recipient: { name: string; lines?: Array<string | null | undefined> };
   extraMeta?: Array<{ label: string; value: string }>;
+  /** Zusaetzliche Bedienelemente links neben «Drucken» (nicht gedruckt). */
+  toolbar?: React.ReactNode;
+  /** Inhalt nach dem A4-Blatt, z. B. der QR-Zahlteil auf eigener Seite. */
+  appendix?: React.ReactNode;
   children: React.ReactNode;
 }) {
   const address = companyAddressLines();
@@ -43,7 +49,8 @@ export function DocumentShell({
         >
           <ArrowLeft className="h-4 w-4" /> {backLabel}
         </Link>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center justify-end gap-2">
+          {toolbar}
           <span className="hidden text-xs text-neutral-400 sm:inline">
             Im Druckdialog &bdquo;Als PDF speichern&ldquo; waehlen
           </span>
@@ -106,7 +113,7 @@ export function DocumentShell({
             </p>
             <dl className="mt-3 space-y-1 text-xs">
               {documentNumber ? (
-                <MetaRow label={`${documentType === "VERTRAG" ? "Vertrags" : "Offerten"}-Nr.:`} value={documentNumber} />
+                <MetaRow label={`${documentType === "VERTRAG" ? "Vertrags" : documentType === "RECHNUNG" ? "Rechnungs" : "Offerten"}-Nr.:`} value={documentNumber} />
               ) : null}
               {documentDate ? <MetaRow label="Datum:" value={documentDate} /> : null}
               {customerNumber ? (
@@ -143,6 +150,7 @@ export function DocumentShell({
           </div>
         </footer>
       </article>
+      {appendix}
     </div>
   );
 }

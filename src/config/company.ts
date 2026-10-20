@@ -21,6 +21,8 @@ export const companyInfo = {
   uid: "CHE-462.387.483",
   bank: "Valiant Bank",
   iban: "CH04 0630 0508 3713 7511 7",
+  /** QR-IBAN (Valiant, QR-IID 30024) fuer QR-Rechnungen mit QR-Referenz. */
+  qrIban: "CH64 3002 4508 3713 7511 7",
   /** Alle Betraege werden exkl. MwSt ausgewiesen (wie im Originalvertrag). */
   amountsExclVat: true,
 

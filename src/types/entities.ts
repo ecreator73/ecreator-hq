@@ -870,6 +870,12 @@ export interface MonthlyEntry extends AuditedEntity {
   category: string | null;
   note: string | null;
   sort_order: number;
+  // Aus dem Kunden-CRM (Migration 0029), optional
+  client_id?: string | null;
+  /** Rappen */
+  commission?: number | null;
+  contract_start?: string | null;
+  contract_duration?: string | null;
 }
 
 /** Finance-Dashboard-Kennzahlen (alle Geldwerte in Rappen). */
