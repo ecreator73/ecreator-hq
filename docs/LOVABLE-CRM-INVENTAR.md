@@ -46,7 +46,7 @@ Alt-Import vorhanden: 176 Leads (legacy_id), 14 Kunden, 14 Verträge, 124 Monats
 | Dashboard + Leads | übernommen (Migration 0024/0025, `scripts/import-lovable.mjs`) | `/`, `/leads`, `/leads/alle`, `/leads/kampagnen`, `/leads/team`, `/leads/mein` |
 | Kunden | übernommen (Migration 0026, `scripts/import-lovable-clients.mjs`) | `/clients/list`, `/clients/[id]` (Kunden-Leads, Rechnung & Links), `/clients/[id]/bericht`, `/clients/leads`, `/clients/onboarding`, `/clients/contracts` |
 | Production (Shoots, Creator, Bewerbungen, Content) | übernommen (Migration 0027, `scripts/import-lovable-production.mjs`); Fotos/Videos noch im alten Speicher | `/production/shoots`, `/production/shoots/[id]`, `/production/creators/bewerbungen`, `/production/content` |
-| Finance (Rechnungen inkl. QR) | offen | – |
+| Finance (Rechnungen inkl. QR, Umsatz, Kosten, offene Posten) | übernommen (Migration 0029, `scripts/import-lovable-finance.mjs`); QR-IBAN in `src/config/company.ts` | `/finance/invoices`, `/finance/invoices/[id]`, `/finance/open`, `/finance/monthly` |
 | Öffentliche Links (Onboarding-Formular, Vertragsunterschrift, Shoot-Review) | offen, zuletzt | – |
 
 Kunden-Leads: Rohstatus bleibt in `client_leads.status_raw`, Gruppe in `status` (Regeln `src/lib/client-lead-status.ts`, pro Kunde überschreibbar über `clients.reporting_status_map`). Vor der Umstellung: Delta-Import aller Skripte (idempotent über `legacy_id`). Achtung: bestehende Datensätze werden mit dem Lovable-Stand überschrieben; für den Delta-Lauf nur neue Datensätze übernehmen.
