@@ -1,6 +1,7 @@
 // Import des Lovable-CRM (crm.ecreator.ch) nach eCreator OS - Stufe 1 (Leads/Sales).
 //
-//   node scripts/import-lovable.mjs <export.json> [--dry]
+//   node scripts/import-lovable.mjs <export.json> [--dry] [--only-new]
+//   --only-new: Delta-Import, fuegt nur fehlende Datensaetze ein und aendert nichts Bestehendes.
 //
 // - Archiviert JEDEN Datensatz in legacy_lovable_records (Rohdaten, idempotent).
 // - Leads: Abgleich ueber legacy_id (= Lovable-ID). Lovable ist der aktuelle
@@ -14,6 +15,7 @@ import { createClient } from "@supabase/supabase-js";
 
 const file = process.argv[2];
 const DRY = process.argv.includes("--dry");
+const ONLY_NEW = process.argv.includes("--only-new"); // Delta: nur fehlende Datensaetze einfuegen, nie aendern
 if (!file) {
   console.error("Aufruf: node scripts/import-lovable.mjs <export.json> [--dry]");
   process.exit(1);
@@ -31,7 +33,7 @@ const log = (...a) => console.log(...a);
 async function upsertChunks(table, rows, onConflict, size = 500) {
   if (DRY || rows.length === 0) return;
   for (let i = 0; i < rows.length; i += size) {
-    const { error } = await db.from(table).upsert(rows.slice(i, i + size), { onConflict });
+    const { error } = await db.from(table).upsert(rows.slice(i, i + size), { onConflict, ignoreDuplicates: ONLY_NEW });
     if (error) throw new Error(`${table}: ${error.message}`);
   }
 }
@@ -143,14 +145,14 @@ for (const l of X.leads) {
 }
 const existing = leadRows.filter((r) => r.id);
 const fresh = leadRows.filter((r) => !r.id);
-await upsertChunks("leads", existing, "id", 200);
+if (!ONLY_NEW) await upsertChunks("leads", existing, "id", 200);
 if (!DRY && fresh.length) {
   for (let i = 0; i < fresh.length; i += 200) {
     const { error } = await db.from("leads").insert(fresh.slice(i, i + 200));
     if (error) throw new Error(`leads insert: ${error.message}`);
   }
 }
-log(`Leads: ${existing.length} aktualisiert, ${fresh.length} neu`);
+log(`Leads: ${ONLY_NEW ? `${existing.length} unveraendert gelassen` : `${existing.length} aktualisiert`}, ${fresh.length} neu`);
 if (Object.keys(unmapped).length) log("  nicht zugeordnete Status (-> andere):", JSON.stringify(unmapped));
 
 const { data: allLeads } = await db.from("leads").select("id, legacy_id").not("legacy_id", "is", null);
@@ -196,7 +198,7 @@ for (const a of X.activity_log ?? []) {
 }
 const ra = await insertNew("sales_activities", acts);
 // Bestehende Anrufe um strukturierte Felder ergaenzen (Migration 0025)
-if (!DRY) for (const a of acts.filter((x) => x.type === "call")) {
+if (!DRY && !ONLY_NEW) for (const a of acts.filter((x) => x.type === "call")) {
   await db.from("sales_activities").update({ outcome: a.outcome, duration_seconds: a.duration_seconds, next_action: a.next_action, next_action_date: a.next_action_date, subject: a.subject }).eq("legacy_id", a.legacy_id);
 }
 log(`Verlauf: ${ra.fresh} neu, ${ra.existing} schon vorhanden (Kommentare, Anrufe, Statuswechsel, Termine, Offerten)`);

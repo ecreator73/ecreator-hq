@@ -1,6 +1,6 @@
 // Import des Lovable-CRM nach eCreator OS - Stufe 3 (Production).
 //
-//   node scripts/import-lovable-production.mjs <export.json> [--dry]
+//   node scripts/import-lovable-production.mjs <export.json> [--dry] [--only-new]
 //
 // Creator (aus angenommenen Bewerbungen) -> creators (Status «Creator Pool»),
 // Bewerbungen -> creator_applications, Shootings + Skripte + Terminvorschlaege,
@@ -14,8 +14,9 @@ import { createClient } from "@supabase/supabase-js";
 
 const file = process.argv[2];
 const DRY = process.argv.includes("--dry");
+const ONLY_NEW = process.argv.includes("--only-new"); // Delta: nur fehlende Datensaetze einfuegen, nie aendern
 if (!file) {
-  console.error("Aufruf: node scripts/import-lovable-production.mjs <export.json> [--dry]");
+  console.error("Aufruf: node scripts/import-lovable-production.mjs <export.json> [--dry] [--only-new]");
   process.exit(1);
 }
 const env = {};
@@ -35,6 +36,7 @@ const clean = (v) => (v == null || String(v).trim() === "" ? null : String(v).tr
 const year = (d) => (d && /^\d{4}/.test(d) ? Number(d.slice(0, 4)) : null);
 
 /** Upsert ueber legacy_id (auch bei partiellem Unique-Index). Liefert legacy_id -> id. */
+const inserted = {};
 async function upsert(table, rows) {
   const ids = new Map();
   if (!rows.length) return ids;
@@ -42,10 +44,12 @@ async function upsert(table, rows) {
   for (const e of existing) ids.set(e.legacy_id, e.id);
   if (DRY) return ids;
   for (const r of rows) {
+    if (ids.has(r.legacy_id) && ONLY_NEW) continue;
     if (ids.has(r.legacy_id)) {
       must(await db.from(table).update(r).eq("id", ids.get(r.legacy_id)), `${table} aktualisieren`);
     } else {
       const ins = must(await db.from(table).insert(r).select("id").single(), `${table} einfuegen`);
+      inserted[table] = (inserted[table] ?? 0) + 1;
       ids.set(r.legacy_id, ins.id);
     }
   }
@@ -223,7 +227,7 @@ if (!DRY) {
     const sid = shootIds.get(s.id);
     if (!cid || !sid) continue;
     const row = { shoot_id: sid, creator_id: cid, status: s.status === "confirmed" ? "confirmed" : "requested", agreed_rate: rappen(s.model_fee) };
-    must(await db.from("shoot_assignments").upsert(row, { onConflict: "shoot_id,creator_id" }), "Model-Zuteilung");
+    must(await db.from("shoot_assignments").upsert(row, { onConflict: "shoot_id,creator_id", ignoreDuplicates: ONLY_NEW }), "Model-Zuteilung");
     assigned++;
   }
 }
@@ -329,4 +333,5 @@ const crmRows = (X.production_items ?? []).filter((p) => p.type === "crm").map((
 }));
 await upsert("crm_projects", crmRows);
 log(`CRM-Builds: ${crmRows.length}`);
+log("Neu eingefuegt:", JSON.stringify(inserted));
 log(DRY ? "Trockenlauf: nichts geschrieben." : "Fertig.");

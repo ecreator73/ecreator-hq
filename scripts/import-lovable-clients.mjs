@@ -1,6 +1,6 @@
 // Import des Lovable-CRM nach eCreator OS - Stufe 2 (Kunden).
 //
-//   node scripts/import-lovable-clients.mjs <export.json> [--dry]
+//   node scripts/import-lovable-clients.mjs <export.json> [--dry] [--only-new]
 //
 // Entscheide des Kunden (19.10.2026):
 //  - Zusammenfuehren (Lovable-Stand gewinnt, Vertraege/Monatszahlen in OS bleiben):
@@ -16,6 +16,7 @@ import { createClient } from "@supabase/supabase-js";
 
 const file = process.argv[2];
 const DRY = process.argv.includes("--dry");
+const ONLY_NEW = process.argv.includes("--only-new"); // Delta: nur fehlende Datensaetze einfuegen, nie aendern
 if (!file) {
   console.error("Aufruf: node scripts/import-lovable-clients.mjs <export.json> [--dry]");
   process.exit(1);
@@ -108,7 +109,7 @@ for (const c of X.clients) {
     lead_id: c.lead_id ? leadByLegacy.get(c.lead_id) ?? null : null,
   };
   if (osMatch) {
-    if (!DRY) must(await db.from("clients").update(row).eq("id", osMatch.id), `Kunde ${c.company_name}`);
+    if (!DRY && !ONLY_NEW) must(await db.from("clients").update(row).eq("id", osMatch.id), `Kunde ${c.company_name}`);
     clientIdByLegacy.set(c.id, osMatch.id);
     merged++;
   } else {
@@ -119,20 +120,20 @@ for (const c of X.clients) {
     created++;
   }
 }
-log(`Kunden: ${merged} zusammengefuehrt/aktualisiert, ${created} neu`);
+log(`Kunden: ${merged} ${ONLY_NEW ? "vorhanden (unveraendert)" : "zusammengefuehrt/aktualisiert"}, ${created} neu`);
 
 // Nur in OS -> ehemalig
 const osOnly = osClients.filter((o) => !o.legacy_id && OS_ONLY_PREFIX.some((p) => o.name.startsWith(p)));
-if (!DRY) {
+if (!DRY && !ONLY_NEW) {
   for (const o of osOnly) {
     must(await db.from("clients").update({ status: "ended" }).eq("id", o.id), `ehemalig ${o.name}`);
     must(await db.from("contracts").update({ status: "cancelled" }).eq("client_id", o.id).eq("status", "active"), `Vertrag ${o.name}`);
   }
 }
-log(`Ehemalige Kunden (nur in OS): ${osOnly.length} auf «Beendet», aktive Vertraege auf «Gekuendigt»`);
+log(ONLY_NEW ? "Ehemalige Kunden: im Delta-Modus uebersprungen" : `Ehemalige Kunden (nur in OS): ${osOnly.length} auf «Beendet», aktive Vertraege auf «Gekuendigt»`);
 
 /* 2. Vertraege + Positionen ---------------------------------------------------- */
-const osContracts = DRY ? [] : must(await db.from("contracts").select("id, client_id, legacy_id, title"), "contracts");
+const osContracts = must(await db.from("contracts").select("id, client_id, legacy_id, title"), "contracts");
 let cUpd = 0, cNew = 0, items = 0;
 for (const k of X.contracts) {
   const clientId = clientIdByLegacy.get(k.client_id);
@@ -170,6 +171,10 @@ for (const k of X.contracts) {
     id ? cUpd++ : cNew++;
     continue;
   }
+  if (id && ONLY_NEW) {
+    cUpd++;
+    continue; // bestehender Vertrag bleibt unveraendert (inkl. Positionen)
+  }
   if (id) {
     must(await db.from("contracts").update(row).eq("id", id), `Vertrag ${k.title}`);
     const o = osContracts.find((x) => x.id === id);
@@ -190,7 +195,7 @@ for (const k of X.contracts) {
     items += its.length;
   }
 }
-log(`Vertraege: ${cUpd} aktualisiert, ${cNew} neu, ${items} Positionen`);
+log(`Vertraege: ${cUpd} ${ONLY_NEW ? "vorhanden (unveraendert)" : "aktualisiert"}, ${cNew} neu, ${items} Positionen`);
 
 /* 3. Reporting-Calls ------------------------------------------------------------ */
 let rep = 0;
@@ -214,6 +219,7 @@ for (const r of X.reporting_calls ?? []) {
   };
   if (!DRY) {
     const ex = must(await db.from("reporting_calls").select("id").eq("legacy_id", r.id).maybeSingle(), "reporting");
+    if (ex && ONLY_NEW) continue;
     if (ex) must(await db.from("reporting_calls").update(row).eq("id", ex.id), "reporting");
     else must(await db.from("reporting_calls").insert({ ...row, created_at: r.created_at }), "reporting");
   }
@@ -241,8 +247,9 @@ const subs = (X.client_onboarding_submissions ?? []).map((s) => ({
   answers: { ...(s.answers ?? {}), kampagne: s.kampagne ?? undefined, kampagne_custom: s.kampagne_custom ?? undefined, startdatum_optionen: s.startdatum_optionen ?? undefined, facebook_login: s.facebook_login ?? undefined },
   created_at: s.created_at,
 }));
-if (!DRY && subs.length) must(await db.from("client_onboarding_submissions").upsert(subs, { onConflict: "legacy_id" }), "onboarding");
-log(`Onboarding-Einsendungen: ${subs.length}`);
+const subsBefore = (await db.from("client_onboarding_submissions").select("id", { count: "exact", head: true })).count ?? 0;
+if (!DRY && subs.length) must(await db.from("client_onboarding_submissions").upsert(subs, { onConflict: "legacy_id", ignoreDuplicates: ONLY_NEW }), "onboarding");
+log(`Onboarding-Einsendungen: ${subs.length} im Export, ${((await db.from("client_onboarding_submissions").select("id", { count: "exact", head: true })).count ?? 0) - subsBefore} neu`);
 
 /* 5. Produkte ------------------------------------------------------------------------ */
 const prods = (X.products ?? []).map((p) => ({
@@ -260,6 +267,7 @@ const prods = (X.products ?? []).map((p) => ({
 if (!DRY) {
   for (const p of prods) {
     const ex = must(await db.from("pricing_items").select("id").eq("legacy_id", p.legacy_id).maybeSingle(), "produkt");
+    if (ex && ONLY_NEW) continue;
     if (ex) must(await db.from("pricing_items").update(p).eq("id", ex.id), "produkt");
     else must(await db.from("pricing_items").insert(p), "produkt");
   }
@@ -341,9 +349,11 @@ const cl = (X.external_leads ?? []).map((l) => {
     synced_at: l.synced_at,
   };
 });
+const clBefore = (await db.from("client_leads").select("id", { count: "exact", head: true })).count ?? 0;
 if (!DRY) {
-  for (let i = 0; i < cl.length; i += 500) must(await db.from("client_leads").upsert(cl.slice(i, i + 500), { onConflict: "legacy_id" }), "Kunden-Leads");
+  for (let i = 0; i < cl.length; i += 500) must(await db.from("client_leads").upsert(cl.slice(i, i + 500), { onConflict: "legacy_id", ignoreDuplicates: ONLY_NEW }), "Kunden-Leads");
 }
 const byCat = cl.reduce((a, l) => ((a[l.status] = (a[l.status] ?? 0) + 1), a), {});
-log(`Kunden-Leads: ${cl.length} (${cl.filter((l) => l.client_id).length} einem Kunden zugeordnet) · Gruppen ${JSON.stringify(byCat)}`);
+log(`Kunden-Leads neu: ${((await db.from("client_leads").select("id", { count: "exact", head: true })).count ?? 0) - clBefore}`);
+log(`Kunden-Leads im Export: ${cl.length} (${cl.filter((l) => l.client_id).length} einem Kunden zugeordnet) · Gruppen ${JSON.stringify(byCat)}`);
 log(DRY ? "Probelauf, nichts geschrieben." : "Import Stufe 2 abgeschlossen.");

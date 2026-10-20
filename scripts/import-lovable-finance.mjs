@@ -1,6 +1,6 @@
 // Import des Lovable-CRM nach eCreator OS - Stufe 4 (Finance).
 //
-//   node scripts/import-lovable-finance.mjs <export.json> [--dry]
+//   node scripts/import-lovable-finance.mjs <export.json> [--dry] [--only-new]
 //
 // Rechnungen (inkl. Positionen, QR-Referenz, Periode, MWST) -> invoices/invoice_items,
 // Kundennummer aus der Rechnungsnummer (KD-100017-83 -> 100017) -> clients.customer_number,
@@ -12,8 +12,9 @@ import { createClient } from "@supabase/supabase-js";
 
 const file = process.argv[2];
 const DRY = process.argv.includes("--dry");
+const ONLY_NEW = process.argv.includes("--only-new"); // Delta: nur fehlende Datensaetze einfuegen, nie aendern
 if (!file) {
-  console.error("Aufruf: node scripts/import-lovable-finance.mjs <export.json> [--dry]");
+  console.error("Aufruf: node scripts/import-lovable-finance.mjs <export.json> [--dry] [--only-new]");
   process.exit(1);
 }
 const env = {};
@@ -32,6 +33,7 @@ const must = (r, what) => {
 };
 const MONTHS = ["Januar", "Februar", "März", "April", "Mai", "Juni", "Juli", "August", "September", "Oktober", "November", "Dezember"];
 
+const inserted = {};
 async function upsert(table, rows) {
   const ids = new Map();
   if (!rows.length) return ids;
@@ -39,8 +41,12 @@ async function upsert(table, rows) {
   for (const e of existing) ids.set(e.legacy_id, e.id);
   if (DRY) return ids;
   for (const r of rows) {
+    if (ids.has(r.legacy_id) && ONLY_NEW) continue;
     if (ids.has(r.legacy_id)) must(await db.from(table).update(r).eq("id", ids.get(r.legacy_id)), `${table} aktualisieren`);
-    else ids.set(r.legacy_id, must(await db.from(table).insert(r).select("id").single(), `${table} einfuegen`).id);
+    else {
+      ids.set(r.legacy_id, must(await db.from(table).insert(r).select("id").single(), `${table} einfuegen`).id);
+      inserted[table] = (inserted[table] ?? 0) + 1;
+    }
   }
   return ids;
 }
@@ -121,7 +127,7 @@ for (const r of invRows) {
   if (!DRY) must(await db.from("clients").update({ customer_number: n }).eq("id", r.client_id).is("customer_number", null), "Kundennummer");
   nums++;
 }
-log(`Kundennummern gesetzt: ${nums}`);
+log(`Kundennummern geprueft: ${nums} (nur fehlende werden gesetzt)`);
 
 /* 3. Umsatz und Kosten pro Monat ---------------------------------------------------- */
 const month = (y, m) => `${y}-${String(m).padStart(2, "0")}-01`;
@@ -153,4 +159,5 @@ await upsert("monthly_financials", [...revRows, ...costRows]);
 const sum = (rows) => rows.reduce((m, r) => ((m[r.month.slice(0, 7)] = (m[r.month.slice(0, 7)] ?? 0) + r.amount), m), {});
 log(`Umsatzzeilen: ${revRows.length} (mit Kunde verknuepft: ${revRows.filter((r) => r.client_id).length})`, sum(revRows));
 log(`Kostenzeilen: ${costRows.length}`, sum(costRows));
+log("Neu eingefuegt:", JSON.stringify(inserted));
 log(DRY ? "Trockenlauf: nichts geschrieben." : "Fertig.");
