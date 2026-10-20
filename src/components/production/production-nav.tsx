@@ -10,6 +10,7 @@ const TABS = [
   { label: "Ads", href: "/production/ads" },
   { label: "CRM", href: "/production/crm" },
   { label: "Shootings", href: "/production/shoots" },
+  { label: "Content", href: "/production/content" },
   { label: "Creator Pool", href: "/production/creators" },
   { label: "Assets", href: "/production/assets" },
   { label: "Kalender", href: "/production/calendar" },

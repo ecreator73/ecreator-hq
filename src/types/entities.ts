@@ -546,6 +546,11 @@ export interface CrmProject extends AuditedEntity {
   go_live_date: string | null;
   owner_id: string | null;
   status: CrmProjectStatus;
+  legacy_id?: string | null;
+  priority?: string | null;
+  start_date?: string | null;
+  progress?: number | null;
+  notes?: string | null;
 }
 
 export interface ContentProject extends AuditedEntity {
@@ -556,6 +561,22 @@ export interface ContentProject extends AuditedEntity {
   platform: string | null;
   owner_id: string | null;
   status: ContentProjectStatus;
+  // Redaktionsplan (Migration 0027), optional
+  legacy_id?: string | null;
+  plan_id?: string | null;
+  shoot_id?: string | null;
+  workspace?: "client" | "ecreator" | null;
+  format?: string | null;
+  topic?: string | null;
+  hook?: string | null;
+  description?: string | null;
+  caption?: string | null;
+  hashtags?: string | null;
+  script_url?: string | null;
+  scheduled_for?: string | null;
+  published_at?: string | null;
+  reminder_lead_days?: number | null;
+  performance_notes?: string | null;
 }
 
 /** Gemeinsame Beziehungen der spezialisierten Projektarten. */
@@ -577,6 +598,34 @@ export interface Shoot extends AuditedEntity {
   videographer: string | null;
   status: ShootStatus;
   notes: string | null;
+  // Shooting-Details (Migration 0027), optional
+  legacy_id?: string | null;
+  shoot_type?: string | null;
+  duration_hours?: number | null;
+  end_date?: string | null;
+  address?: string | null;
+  description?: string | null;
+  content_goal?: string | null;
+  video_count?: number | null;
+  equipment?: string | null;
+  responsible_id?: string | null;
+  editor_id?: string | null;
+  final_date_set?: boolean | null;
+  delivery_deadline?: string | null;
+  confirmed_at?: string | null;
+  completed_at?: string | null;
+  delivered_at?: string | null;
+  script_url?: string | null;
+  customer_drive_url?: string | null;
+  shoot_folder_url?: string | null;
+  delivery_url?: string | null;
+  /** Rappen */
+  model_fee?: number | null;
+  model_paid?: boolean | null;
+  model_paid_at?: string | null;
+  invoice_status?: string | null;
+  confirmation_notes?: string | null;
+  review_notes?: string | null;
 }
 export interface ShootWithRelations extends Shoot {
   client: ClientMini | null;
@@ -679,6 +728,12 @@ export interface Creator extends AuditedEntity {
   consent_date: string | null;
   consent_note: string | null;
   notes: string | null;
+  // Aus der Bewerbung (Migration 0027), optional
+  legacy_id?: string | null;
+  photo_path?: string | null;
+  video_path?: string | null;
+  portfolio_url?: string | null;
+  rate_expectation?: string | null;
 }
 
 /** Creator angereichert mit Bewertungs-/Buchungs-Kennzahlen. */

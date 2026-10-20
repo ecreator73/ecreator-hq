@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils";
 const TABS = [
   { label: "Dashboard", href: "/production/creators" },
   { label: "Creators", href: "/production/creators/list" },
+  { label: "Bewerbungen", href: "/production/creators/bewerbungen" },
   { label: "Pipeline", href: "/production/creators/pipeline" },
   { label: "Matching", href: "/production/creators/matching" },
   { label: "Reporting", href: "/production/creators/reporting" },

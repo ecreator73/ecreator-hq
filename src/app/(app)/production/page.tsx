@@ -175,7 +175,7 @@ export default async function ProductionDashboardPage() {
         .list({
           from: week.from,
           to: week.to,
-          statusIn: ["planned", "confirmed"],
+          statusIn: ["date_search", "planned", "confirmed"],
         })
         .catch(() => [] as ShootWithRelations[]),
       websiteProjectsService

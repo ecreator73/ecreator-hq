@@ -229,13 +229,17 @@ export const CONTENT_PROJECT_STATUSES = [
   { key: "editing", label: "Schnitt", color: "amber" },
   { key: "review", label: "Review", color: "amber" },
   { key: "approved", label: "Freigegeben", color: "green" },
+  { key: "scheduled", label: "Eingeplant", color: "green" },
   { key: "published", label: "Veroeffentlicht", color: "green" },
 ] as const satisfies readonly CatalogEntry[];
 
 export const SHOOT_STATUSES = [
+  { key: "date_search", label: "Terminsuche", color: "amber" },
   { key: "planned", label: "Geplant", color: "gray", isDefault: true },
   { key: "confirmed", label: "Bestaetigt", color: "blue" },
   { key: "done", label: "Durchgefuehrt", color: "green" },
+  { key: "editing", label: "Schnitt", color: "blue" },
+  { key: "delivered", label: "Geliefert", color: "green" },
   { key: "rescheduled", label: "Verschoben", color: "amber" },
   { key: "cancelled", label: "Abgesagt", color: "red" },
 ] as const satisfies readonly CatalogEntry[];
@@ -855,6 +859,14 @@ export const CREATOR_LANGUAGES = [
   { key: "it", label: "Italienisch" },
   { key: "es", label: "Spanisch" },
   { key: "pt", label: "Portugiesisch" },
+  { key: "gsw", label: "Schweizerdeutsch" },
+  { key: "tr", label: "Tuerkisch" },
+  { key: "sr", label: "Serbisch" },
+  { key: "sq", label: "Albanisch" },
+  { key: "ar", label: "Arabisch" },
+  { key: "ru", label: "Russisch" },
+  { key: "ta", label: "Tamil" },
+  { key: "ln", label: "Lingala" },
 ] as const;
 export const CREATOR_LANGUAGE_KEYS = CREATOR_LANGUAGES.map((t) => t.key) as [
   (typeof CREATOR_LANGUAGES)[number]["key"],

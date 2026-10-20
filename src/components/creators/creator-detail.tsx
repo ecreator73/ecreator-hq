@@ -323,8 +323,42 @@ function OverviewTab({ creator }: { creator: CreatorWithStats }) {
               ? formatCHF(creator.additional_costs)
               : "-"}
           </Field>
+          {creator.rate_expectation ? (
+            <Field label="Vorstellung laut Bewerbung">
+              {creator.rate_expectation}
+            </Field>
+          ) : null}
         </dl>
       </Section>
+
+      {creator.portfolio_url || creator.photo_path || creator.video_path ? (
+        <Section title="Bewerbungsunterlagen">
+          <dl className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {creator.portfolio_url ? (
+              <Field label="Portfolio">
+                <a
+                  href={/^https?:\/\//.test(creator.portfolio_url) ? creator.portfolio_url : `https://${creator.portfolio_url}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-brand-700 hover:underline"
+                >
+                  Öffnen
+                </a>
+              </Field>
+            ) : null}
+            <Field label="Foto / Video">
+              {[creator.photo_path ? "Foto" : null, creator.video_path ? "Video" : null]
+                .filter(Boolean)
+                .join(" und ") || "-"}
+              {creator.photo_path || creator.video_path ? (
+                <span className="block text-xs text-neutral-500">
+                  liegt noch im alten Kunden-CRM, wird übernommen
+                </span>
+              ) : null}
+            </Field>
+          </dl>
+        </Section>
+      ) : null}
 
       <Section title="Profil">
         <dl className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
