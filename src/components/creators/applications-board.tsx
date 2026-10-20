@@ -21,7 +21,7 @@ const df = new Intl.DateTimeFormat("de-CH", { timeZone: "Europe/Zurich", day: "2
 const url = (u: string) => (/^https?:\/\//.test(u) ? u : `https://${u}`);
 const thisYear = new Date().getFullYear();
 
-export function ApplicationsBoard({ applications, initialStatus }: { applications: CreatorApplication[]; initialStatus?: string }) {
+export function ApplicationsBoard({ applications, initialStatus, media = {} }: { applications: CreatorApplication[]; initialStatus?: string; media?: Record<string, string> }) {
   const router = useRouter();
   const [pending, start] = useTransition();
   const [tab, setTab] = useState<string>(STATUS.some((s) => s.key === initialStatus) ? initialStatus! : applications.some((a) => a.status === "new") ? "new" : "reviewing");
@@ -84,10 +84,19 @@ export function ApplicationsBoard({ applications, initialStatus }: { application
         <ul className="grid gap-3 lg:grid-cols-2">
           {list.map((a) => {
             const age = a.birth_year ? thisYear - a.birth_year : null;
+            const photo = a.photo_file ? media[a.photo_file] : undefined;
+            const video = a.video_file ? media[a.video_file] : undefined;
+            const photoIsPdf = /\.pdf$/i.test(a.photo_file ?? "");
             return (
               <li key={a.id} className="flex flex-col rounded-xl border border-neutral-200 bg-white p-4">
                 <div className="flex items-start justify-between gap-3">
-                  <div className="min-w-0">
+                  {photo && !photoIsPdf ? (
+                    <a href={photo} target="_blank" rel="noopener noreferrer" className="shrink-0">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={photo} alt={`Foto von ${a.first_name}`} loading="lazy" className="h-16 w-14 rounded-lg border border-neutral-200 object-cover" />
+                    </a>
+                  ) : null}
+                  <div className="min-w-0 flex-1">
                     <p className="truncate font-medium text-neutral-900">
                       {a.first_name} {a.last_name}
                       {age ? <span className="ml-2 text-sm font-normal text-neutral-500">{age} J.</span> : null}
@@ -123,7 +132,21 @@ export function ApplicationsBoard({ applications, initialStatus }: { application
                       Portfolio <ExternalLink className="h-3 w-3 text-neutral-400" aria-hidden />
                     </a>
                   ) : null}
-                  {a.photo_path || a.video_path ? <span className="rounded-md bg-neutral-50 px-2 py-1 text-neutral-500">{[a.photo_path ? "Foto" : null, a.video_path ? "Video" : null].filter(Boolean).join(" + ")} im alten CRM</span> : null}
+                  {video ? (
+                    <a href={video} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 rounded-md border border-neutral-200 px-2 py-1 text-neutral-700 hover:bg-neutral-50">
+                      Video ansehen <ExternalLink className="h-3 w-3 text-neutral-400" aria-hidden />
+                    </a>
+                  ) : null}
+                  {photo && photoIsPdf ? (
+                    <a href={photo} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 rounded-md border border-neutral-200 px-2 py-1 text-neutral-700 hover:bg-neutral-50">
+                      Sedcard (PDF) <ExternalLink className="h-3 w-3 text-neutral-400" aria-hidden />
+                    </a>
+                  ) : null}
+                  {(a.photo_path && !a.photo_file) || (a.video_path && !a.video_file) ? (
+                    <span className="rounded-md bg-neutral-50 px-2 py-1 text-neutral-500">
+                      {a.status === "rejected" ? "Unterlagen nicht übernommen (abgelehnt)" : "Unterlagen noch im alten CRM"}
+                    </span>
+                  ) : null}
                 </div>
                 <div className="mt-auto flex flex-wrap items-center gap-2 border-t border-neutral-100 pt-3">
                   {a.status === "accepted" && a.creator_id ? (

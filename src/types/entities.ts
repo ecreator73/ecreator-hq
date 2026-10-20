@@ -734,6 +734,9 @@ export interface Creator extends AuditedEntity {
   video_path?: string | null;
   portfolio_url?: string | null;
   rate_expectation?: string | null;
+  /** Pfade im privaten Speicher «creator-media» (Migration 0028) */
+  photo_file?: string | null;
+  video_file?: string | null;
 }
 
 /** Creator angereichert mit Bewertungs-/Buchungs-Kennzahlen. */

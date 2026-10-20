@@ -63,6 +63,7 @@ export function CreatorDetail({
   availability,
   portfolio,
   shoots,
+  media,
 }: {
   creator: CreatorWithStats;
   assignments: ShootAssignmentWithRelations[];
@@ -70,6 +71,8 @@ export function CreatorDetail({
   availability: CreatorAvailability[];
   portfolio: CreatorAsset[];
   shoots: { id: string; title: string }[];
+  /** Signierte Links (1 Std.) auf Foto/Video im privaten Speicher. */
+  media?: { photo?: string; video?: string };
 }) {
   const router = useRouter();
   const [tab, setTab] = useState<TabKey>("overview");
@@ -156,7 +159,7 @@ export function CreatorDetail({
       <Card>
         <CardContent className="p-5 sm:p-6">
           {tab === "overview" ? (
-            <OverviewTab creator={creator} />
+            <OverviewTab creator={creator} media={media} />
           ) : tab === "social" ? (
             <SocialTab creator={creator} />
           ) : tab === "shootings" ? (
@@ -235,7 +238,7 @@ function Section({
   );
 }
 
-function OverviewTab({ creator }: { creator: CreatorWithStats }) {
+function OverviewTab({ creator, media }: { creator: CreatorWithStats; media?: { photo?: string; video?: string } }) {
   const region = [creator.city, creator.canton, creator.country]
     .filter(Boolean)
     .join(", ");
@@ -331,32 +334,47 @@ function OverviewTab({ creator }: { creator: CreatorWithStats }) {
         </dl>
       </Section>
 
-      {creator.portfolio_url || creator.photo_path || creator.video_path ? (
-        <Section title="Bewerbungsunterlagen">
-          <dl className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {creator.portfolio_url ? (
-              <Field label="Portfolio">
-                <a
-                  href={/^https?:\/\//.test(creator.portfolio_url) ? creator.portfolio_url : `https://${creator.portfolio_url}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-brand-700 hover:underline"
-                >
-                  Öffnen
-                </a>
-              </Field>
+      {creator.portfolio_url || creator.photo_file || creator.video_file || creator.photo_path || creator.video_path ? (
+        <Section title="Foto, Video und Unterlagen">
+          <div className="flex flex-wrap items-start gap-4">
+            {media?.photo && /\.pdf$/i.test(creator.photo_file ?? "") ? (
+              <a href={media.photo} target="_blank" rel="noopener noreferrer" className="inline-flex h-10 items-center rounded-lg border border-neutral-200 px-3 text-sm text-brand-700 hover:bg-neutral-50">
+                Sedcard (PDF) öffnen
+              </a>
+            ) : media?.photo ? (
+              <a href={media.photo} target="_blank" rel="noopener noreferrer" className="block">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={media.photo} alt={`Foto von ${creator.first_name}`} className="h-56 w-44 rounded-lg border border-neutral-200 object-cover" />
+              </a>
             ) : null}
-            <Field label="Foto / Video">
-              {[creator.photo_path ? "Foto" : null, creator.video_path ? "Video" : null]
-                .filter(Boolean)
-                .join(" und ") || "-"}
-              {creator.photo_path || creator.video_path ? (
-                <span className="block text-xs text-neutral-500">
-                  liegt noch im alten Kunden-CRM, wird übernommen
-                </span>
+            {media?.video ? (
+              <video src={media.video} controls preload="metadata" playsInline className="h-56 max-w-full rounded-lg border border-neutral-200 bg-black">
+                Video kann im Browser nicht abgespielt werden.
+              </video>
+            ) : null}
+            <dl className="grid min-w-[12rem] flex-1 gap-4">
+              {creator.portfolio_url ? (
+                <Field label="Portfolio">
+                  <a
+                    href={/^https?:\/\//.test(creator.portfolio_url) ? creator.portfolio_url : `https://${creator.portfolio_url}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-brand-700 hover:underline"
+                  >
+                    Öffnen
+                  </a>
+                </Field>
               ) : null}
-            </Field>
-          </dl>
+              {(creator.photo_path && !creator.photo_file) || (creator.video_path && !creator.video_file) ? (
+                <Field label="Noch im alten CRM">
+                  {[creator.photo_path && !creator.photo_file ? "Foto" : null, creator.video_path && !creator.video_file ? "Video" : null].filter(Boolean).join(" und ")}
+                </Field>
+              ) : null}
+              {(creator.photo_file || creator.video_file) && !media?.photo && !media?.video ? (
+                <Field label="Medien">Nur für Leitung, Projektleitung und Creative sichtbar.</Field>
+              ) : null}
+            </dl>
+          </div>
         </Section>
       ) : null}
 

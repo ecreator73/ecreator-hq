@@ -8,6 +8,7 @@ import {
 } from "@/server/services";
 import { creatorFormOptionsAction } from "@/app/(app)/production/creators/actions";
 import { CreatorDetail } from "@/components/creators/creator-detail";
+import { signCreatorMedia } from "@/server/services/creator-media.service";
 
 export default async function CreatorDetailPage({
   params,
@@ -30,6 +31,12 @@ export default async function CreatorDetailPage({
       ),
     ]);
 
+  const signed = await signCreatorMedia([creator.photo_file, creator.video_file]).catch(() => ({}) as Record<string, string>);
+  const media = {
+    photo: creator.photo_file ? signed[creator.photo_file] : undefined,
+    video: creator.video_file ? signed[creator.video_file] : undefined,
+  };
+
   const shoots = (options.ok && options.data ? options.data.shoots : []).map(
     (s) => ({ id: s.id, title: s.title }),
   );
@@ -42,6 +49,7 @@ export default async function CreatorDetailPage({
       availability={availability}
       portfolio={portfolio}
       shoots={shoots}
+      media={media}
     />
   );
 }

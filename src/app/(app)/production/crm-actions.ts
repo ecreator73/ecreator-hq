@@ -257,6 +257,8 @@ export async function decideApplicationAction(id: string, status: string): Promi
           consent_note: a.privacy_consent ? "Datenschutz-Einwilligung im Bewerbungsformular" : null,
           photo_path: a.photo_path,
           video_path: a.video_path,
+          photo_file: a.photo_file,
+          video_file: a.video_file,
           portfolio_url: a.portfolio_url,
           rate_expectation: a.rate_expectation,
           notes: a.about,

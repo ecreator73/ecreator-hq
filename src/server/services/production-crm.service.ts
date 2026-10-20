@@ -71,6 +71,8 @@ export interface CreatorApplication {
   about: string | null;
   photo_path: string | null;
   video_path: string | null;
+  photo_file: string | null;
+  video_file: string | null;
   portfolio_url: string | null;
   rate_expectation: string | null;
   source: string | null;
