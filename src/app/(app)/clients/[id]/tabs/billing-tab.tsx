@@ -5,6 +5,7 @@ import type { ClientWithStats, Contract } from "@/types/entities";
 import type { ContractItem } from "@/server/services/client-leads.service";
 import { formatCHF, formatDate } from "@/lib/utils";
 import { Section, Meta, EmptyRow } from "../detail-ui";
+import { ShareLink } from "@/components/share/share-link";
 
 const dash = (v: string | number | null | undefined) => (v == null || v === "" ? "–" : String(v));
 
@@ -115,6 +116,16 @@ export function BillingTab({ client, contracts, items }: { client: ClientWithSta
           </div>
         )}
       </Section>
+
+      <div className="lg:col-span-2">
+        <ShareLink
+          kind="onboarding"
+          id={client.id}
+          initialPath={client.onboarding_token ? `/onboarding?k=${client.onboarding_token}` : null}
+          label="Persönlicher Onboarding-Link"
+          hint="Der Kunde füllt das Onboarding aus, die Angaben landen direkt bei diesem Kunden."
+        />
+      </div>
 
       <Section title="Links" className="lg:col-span-2">
         {links.length === 0 ? (

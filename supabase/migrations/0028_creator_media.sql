@@ -8,8 +8,8 @@
 -- ===========================================================================
 
 insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
-values ('creator-media', 'creator-media', false, 524288000,
-        array['image/jpeg','image/png','image/webp','image/heic','video/mp4','video/quicktime','application/pdf'])
+values ('creator-media', 'creator-media', false, 52428800,   -- 50 MB (Grenze Free Plan)
+        array['image/jpeg','image/png','image/webp','image/heic','video/mp4','video/quicktime','video/webm','application/pdf'])
 on conflict (id) do update set public = false;
 
 alter table public.creators

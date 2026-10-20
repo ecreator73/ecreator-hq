@@ -30,6 +30,16 @@ export interface ShootScript {
   cta: string | null;
   notes: string | null;
   status: "draft" | "review" | "approved";
+  customer_feedback?: string | null;
+  customer_decided_at?: string | null;
+}
+
+export interface ChangeRequest {
+  id: string;
+  name: string | null;
+  message: string;
+  status: "open" | "done";
+  created_at: string;
 }
 
 export interface ShootDateOption {
@@ -52,6 +62,8 @@ export interface ShootOverview extends Shoot {
 export interface ShootDetail extends ShootOverview {
   scripts: ShootScript[];
   options: ShootDateOption[];
+  changes: ChangeRequest[];
+  share_token: string | null;
 }
 
 export interface CreatorApplication {
@@ -132,14 +144,21 @@ export const productionCrmService = {
 
   async shoot(id: string): Promise<ShootDetail | null> {
     const { supabase } = await getContext();
-    const [s, scripts, options] = await Promise.all([
+    const [s, scripts, options, changes] = await Promise.all([
       supabase.from("shoots").select(SHOOT_SELECT).eq("id", id).is("deleted_at", null).maybeSingle(),
-      supabase.from("shoot_scripts").select("id, video_number, title, hook, script, cta, notes, status").eq("shoot_id", id).order("video_number", { ascending: true, nullsFirst: false }).order("created_at"),
+      supabase.from("shoot_scripts").select("id, video_number, title, hook, script, cta, notes, status, customer_feedback, customer_decided_at").eq("shoot_id", id).order("video_number", { ascending: true, nullsFirst: false }).order("created_at"),
       supabase.from("shoot_date_options").select("id, starts_at, customer_available, model_available, notes").eq("shoot_id", id).order("starts_at"),
+      supabase.from("shoot_change_requests").select("id, name, message, status, created_at").eq("shoot_id", id).order("created_at", { ascending: false }),
     ]);
     if (s.error) throw new Error(s.error.message);
     if (!s.data) return null;
-    return { ...mapShoot(s.data), scripts: (scripts.data ?? []) as ShootScript[], options: (options.data ?? []) as ShootDateOption[] };
+    return {
+      ...mapShoot(s.data),
+      scripts: (scripts.data ?? []) as ShootScript[],
+      options: (options.data ?? []) as ShootDateOption[],
+      changes: (changes.data ?? []) as ChangeRequest[],
+      share_token: (s.data as { share_token?: string | null }).share_token ?? null,
+    };
   },
 
   async applications(): Promise<CreatorApplication[]> {

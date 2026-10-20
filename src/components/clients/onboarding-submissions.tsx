@@ -17,9 +17,24 @@ function valueText(v: unknown): string {
   if (typeof v === "boolean") return v ? "Ja" : "Nein";
   return String(v);
 }
-const keyLabel = (k: string) => k.replace(/_/g, " ").replace(/^\w/, (c) => c.toUpperCase());
+const LABELS: Record<string, string> = {
+  beschreibung: "Was macht ihr?",
+  angebot: "Wichtigste Produkte / Dienstleistungen",
+  usp: "Was macht euch besonders?",
+  konkurrenz: "Wichtigste Mitbewerber",
+  ziele: "Marketingziele",
+  zielgruppe: "Zielgruppe",
+  zugaenge: "Vorhandene Konten",
+  unterlagen: "Logo, CI, Bilder",
+  ansprechpartner: "Hauptansprechpartner",
+  ansprechpartner_kontakt: "Kontakt Ansprechpartner",
+  kommunikation: "Bevorzugter Kanal",
+  startdatum: "Gewünschter Start",
+  bemerkungen: "Sonstiges",
+};
+const keyLabel = (k: string) => LABELS[k] ?? k.replace(/_/g, " ").replace(/^\w/, (c) => c.toUpperCase());
 
-export function OnboardingSubmissions({ submissions, clients }: { submissions: OnboardingSubmission[]; clients: Array<{ id: string; name: string }> }) {
+export function OnboardingSubmissions({ submissions, clients, fileLinks = {} }: { submissions: OnboardingSubmission[]; clients: Array<{ id: string; name: string }>; fileLinks?: Record<string, string> }) {
   const router = useRouter();
   const [pending, start] = useTransition();
   const [open, setOpen] = useState<string | null>(null);
@@ -114,6 +129,24 @@ export function OnboardingSubmissions({ submissions, clients }: { submissions: O
                         <dd className="break-words text-neutral-800">{valueText(v)}</dd>
                       </div>
                     ))}
+                    {s.files?.length ? (
+                      <div className="sm:col-span-2">
+                        <dt className="text-[11px] uppercase tracking-wide text-neutral-400">Hochgeladene Unterlagen</dt>
+                        <dd className="mt-1 flex flex-wrap gap-2">
+                          {s.files.map((f) =>
+                            fileLinks[f.path] ? (
+                              <a key={f.path} href={fileLinks[f.path]} target="_blank" rel="noopener noreferrer" className="rounded-md border border-neutral-200 bg-white px-2 py-1 text-xs text-brand-700 hover:bg-neutral-50">
+                                {f.name}
+                              </a>
+                            ) : (
+                              <span key={f.path} className="rounded-md bg-white px-2 py-1 text-xs text-neutral-500">
+                                {f.name}
+                              </span>
+                            ),
+                          )}
+                        </dd>
+                      </div>
+                    ) : null}
                     {answers.map(([k, v]) => (
                       <div key={k} className="sm:col-span-2">
                         <dt className="text-[11px] uppercase tracking-wide text-neutral-400">{keyLabel(k)}</dt>

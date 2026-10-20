@@ -14,10 +14,14 @@ import {
   setAssignmentAction,
   setModelPaidAction,
   setOptionAvailabilityAction,
+  setChangeRequestAction,
   setShootStageAction,
   updateShootDetailsAction,
 } from "@/app/(app)/production/crm-actions";
 import { formatCHF, cn } from "@/lib/utils";
+import { parseScenes, serializeScenes, type Scene } from "@/lib/scenes";
+import { ScenesTable } from "./scenes-table";
+import { ShareLink } from "@/components/share/share-link";
 
 type Person = { id: string; full_name: string | null };
 type CreatorOpt = { id: string; first_name: string; last_name: string | null; city: string | null };
@@ -69,43 +73,6 @@ function toLocal(iso: string | null | undefined) {
 const input = "h-9 w-full rounded-lg border border-neutral-200 bg-white px-2.5 text-sm focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-100";
 const href = (u: string) => (/^https?:\/\//.test(u) ? u : `https://${u}`);
 
-/** Szenen-Skript wie im Kunden-CRM: {"version":1,"scenes":[{scene,image,speech}]}. */
-type Scene = { scene: string; image: string; speech: string };
-function parseScenes(script: string | null | undefined): Scene[] | null {
-  if (!script || !script.trim().startsWith("{")) return null;
-  try {
-    const j = JSON.parse(script) as { scenes?: Array<Partial<Scene>> };
-    if (!Array.isArray(j.scenes)) return null;
-    return j.scenes.map((x, i) => ({ scene: String(x.scene ?? String(i + 1).padStart(2, "0")), image: String(x.image ?? ""), speech: String(x.speech ?? "") }));
-  } catch {
-    return null;
-  }
-}
-const serializeScenes = (scenes: Scene[]) =>
-  JSON.stringify({ version: 1, scenes: scenes.filter((x) => x.image.trim() || x.speech.trim()).map((x, i) => ({ ...x, scene: String(i + 1).padStart(2, "0") })) });
-
-function ScenesTable({ scenes }: { scenes: Scene[] }) {
-  return (
-    <table className="mt-1 w-full text-sm">
-      <thead className="text-left text-[11px] uppercase tracking-wide text-neutral-400">
-        <tr>
-          <th className="w-10 py-1 font-medium">Nr.</th>
-          <th className="w-2/5 py-1 font-medium">Bild</th>
-          <th className="py-1 font-medium">Sprechertext</th>
-        </tr>
-      </thead>
-      <tbody className="divide-y divide-neutral-100 align-top">
-        {scenes.map((x) => (
-          <tr key={x.scene}>
-            <td className="py-1.5 tabular-nums text-neutral-400">{x.scene}</td>
-            <td className="whitespace-pre-line py-1.5 pr-3 text-neutral-600">{x.image}</td>
-            <td className="whitespace-pre-line py-1.5 text-neutral-800">{x.speech}</td>
-          </tr>
-        ))}
-      </tbody>
-    </table>
-  );
-}
 
 function Card({ title, action, children, className }: { title: string; action?: React.ReactNode; children: React.ReactNode; className?: string }) {
   return (
@@ -319,6 +286,14 @@ export function ShootDetailView({ shoot, users, creators }: { shoot: ShootDetail
                         </div>
                       ) : null}
                       {s.cta ? (<div><dt className="text-[11px] uppercase tracking-wide text-neutral-400">Call to Action</dt><dd className="text-neutral-800">{s.cta}</dd></div>) : null}
+                      {s.customer_feedback ? (
+                        <div className="rounded-md bg-amber-50 px-2.5 py-2">
+                          <dt className="text-[11px] uppercase tracking-wide text-amber-700">Rückmeldung Kunde</dt>
+                          <dd className="whitespace-pre-line text-amber-900">{s.customer_feedback}</dd>
+                        </div>
+                      ) : s.status === "approved" && s.customer_decided_at ? (
+                        <div className="text-xs text-emerald-700">Vom Kunden freigegeben</div>
+                      ) : null}
                     </dl>
                   </li>
                 ),
@@ -338,6 +313,32 @@ export function ShootDetailView({ shoot, users, creators }: { shoot: ShootDetail
         </div>
 
         <div className="space-y-5">
+          <ShareLink
+            kind="shoot"
+            id={shoot.id}
+            initialPath={shoot.share_token ? `/shoot-review/${shoot.share_token}` : null}
+            label="Kundenlink zur Durchsicht"
+            hint="Der Kunde bestätigt Termine, gibt Skripte frei und sendet Anpassungswünsche."
+          />
+
+          {shoot.changes.length ? (
+            <Card title={`Anpassungswünsche (${shoot.changes.filter((c) => c.status === "open").length} offen)`}>
+              <ul className="space-y-3">
+                {shoot.changes.map((c) => (
+                  <li key={c.id} className={cn("text-sm", c.status === "done" && "opacity-60")}>
+                    <p className="text-xs text-neutral-500">
+                      {c.name ?? "Kunde"} · {dDate.format(new Date(c.created_at))}
+                    </p>
+                    <p className="whitespace-pre-line text-neutral-800">{c.message}</p>
+                    <button type="button" disabled={pending} onClick={() => run(() => setChangeRequestAction(shoot.id, c.id, c.status !== "done"))} className="mt-1 text-xs font-medium text-brand-700 hover:underline">
+                      {c.status === "done" ? "Wieder öffnen" : "Als erledigt markieren"}
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </Card>
+          ) : null}
+
           <Card title="Model">
             {shoot.assignments.length ? (
               <ul className="space-y-2">

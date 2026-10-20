@@ -99,6 +99,8 @@ export interface Client extends AuditedEntity {
   billing_email?: string | null;
   billing_email_cc?: string | null;
   reporting_status_map?: Record<string, string> | null;
+  onboarding_token?: string | null;
+  customer_number?: number | null;
   external_client_ids?: string[] | null;
 }
 

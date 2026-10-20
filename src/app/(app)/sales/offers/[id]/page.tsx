@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
+import { ShareLink } from "@/components/share/share-link";
 import {
   offersService,
   clientsService,
@@ -59,7 +60,26 @@ export default async function OfferDocumentPage({
   const amount = hasItems ? sums.total : (offer.amount ?? 0);
   const price = formatCHF(amount, offer.currency);
 
+  const sig = offer as unknown as { sign_token?: string | null; signed_at?: string | null; signed_name?: string | null; signature_data?: string | null };
+  const signed = sig.signed_at ? { name: sig.signed_name ?? null, at: sig.signed_at, image: sig.signature_data ?? null } : null;
+
   return (
+    <div className="space-y-4">
+    <div className="mx-auto w-full max-w-[210mm] print:hidden">
+      {signed ? (
+        <p className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900">
+          Online unterschrieben von {signed.name} am {new Intl.DateTimeFormat("de-CH", { timeZone: "Europe/Zurich", dateStyle: "medium", timeStyle: "short" }).format(new Date(signed.at))}.
+        </p>
+      ) : (
+        <ShareLink
+          kind="offer"
+          id={offer.id}
+          initialPath={sig.sign_token ? `/signieren/offer/${sig.sign_token}` : null}
+          label="Link zum Online-Unterschreiben"
+          hint="Link per E-Mail oder WhatsApp an den Kunden senden. Er sieht die Offerte und unterschreibt mit Finger oder Maus."
+        />
+      )}
+    </div>
     <DocumentShell
       backHref="/sales/offers"
       backLabel="Zurueck zu Angebote"
@@ -138,12 +158,13 @@ export default async function OfferDocumentPage({
         {companyInfo.termsNote}
       </p>
 
-      <SignatureBlock customerName={client?.name ?? lead?.company_name} />
+      <SignatureBlock customerName={client?.name ?? lead?.company_name} signed={signed} />
 
       {/* Positionen bearbeiten - nur am Bildschirm, nicht im Druck */}
       <div className="mt-10">
         <ItemsEditor items={items} offerId={offer.id} currency={offer.currency} />
       </div>
     </DocumentShell>
+    </div>
   );
 }

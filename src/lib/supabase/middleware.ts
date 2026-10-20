@@ -19,6 +19,16 @@ const PUBLIC_PATHS = [
   "/api/calendar",
 ];
 
+/**
+ * Offene Seiten fuer Kunden, Creator und Interessenten (ohne Login, auch fuer
+ * eingeloggte Nutzer erreichbar). Zugriff auf Daten nur ueber Token, serverseitig.
+ */
+const OPEN_PATHS = ["/model", "/onboarding", "/signieren", "/shoot-review"];
+
+export function isOpenPath(pathname: string): boolean {
+  return OPEN_PATHS.some((path) => pathname === path || pathname.startsWith(`${path}/`));
+}
+
 function isPublicPath(pathname: string): boolean {
   return PUBLIC_PATHS.some(
     (path) => pathname === path || pathname.startsWith(`${path}/`),
@@ -34,6 +44,12 @@ export async function updateSession(
 ): Promise<NextResponse> {
   let supabaseResponse = NextResponse.next({ request });
   const { pathname } = request.nextUrl;
+
+  // Oeffentliche Kundenseiten: keine Anmeldung, keine Umleitung, keine Session-Abfrage.
+  if (isOpenPath(pathname)) {
+    supabaseResponse.headers.set("X-Robots-Tag", "noindex, nofollow");
+    return supabaseResponse;
+  }
 
   // Supabase nicht konfiguriert:
   // - lokal (dev): alles durchlassen, damit das UI begehbar ist

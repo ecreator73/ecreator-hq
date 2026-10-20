@@ -135,6 +135,20 @@ export async function setAssignmentAction(shootId: string, assignmentId: string,
   }
 }
 
+/* ---- Anpassungswuensche aus dem Shoot-Review -------------------------------- */
+
+export async function setChangeRequestAction(shootId: string, requestId: string, done: boolean): Promise<Result> {
+  try {
+    const { db } = await guard();
+    uuid.parse(requestId);
+    check(await db.from("shoot_change_requests").update({ status: done ? "done" : "open", done_at: done ? new Date().toISOString() : null }).eq("id", requestId).eq("shoot_id", shootId));
+    refreshShoot(shootId);
+    return { ok: true, message: done ? "Als erledigt markiert" : "Wieder offen" };
+  } catch (e) {
+    return fail(e);
+  }
+}
+
 /* ---- Terminvorschlaege ------------------------------------------------------ */
 
 export async function addDateOptionAction(shootId: string, startsAt: string): Promise<Result> {

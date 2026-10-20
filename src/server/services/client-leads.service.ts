@@ -165,6 +165,7 @@ export interface OnboardingSubmission {
   monthly_ad_budget: string | null;
   services: string[];
   answers: Record<string, unknown>;
+  files?: Array<{ path: string; name: string; size: number }>;
   created_at: string;
 }
 

@@ -234,15 +234,28 @@ export function TotalLine({ label, value }: { label: string; value: string }) {
 }
 
 /** Unterschriftenblock: Kunde links, eCreator rechts. */
-export function SignatureBlock({ customerName }: { customerName?: string | null }) {
+export function SignatureBlock({
+  customerName,
+  signed,
+}: {
+  customerName?: string | null;
+  /** Online-Unterschrift (Name, Zeitpunkt, gezeichnetes Bild). */
+  signed?: { name: string | null; at: string; image: string | null } | null;
+}) {
+  const at = signed ? new Intl.DateTimeFormat("de-CH", { timeZone: "Europe/Zurich", day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" }).format(new Date(signed.at)) : null;
   return (
     <section className="mt-14 grid gap-12 sm:grid-cols-2 print-keep">
       <div>
-        <div className="h-14 border-b border-neutral-400" />
+        <div className="flex h-14 items-end border-b border-neutral-400">
+          {signed?.image ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={signed.image} alt={`Unterschrift ${signed.name ?? ""}`} className="max-h-14 w-auto" />
+          ) : null}
+        </div>
         <p className="mt-1.5 text-[11px] text-neutral-500">
           {customerName ? `${customerName}` : "Kunde"}
           <br />
-          Ort, Datum &amp; Unterschrift
+          {signed ? `Online unterschrieben von ${signed.name ?? "–"} am ${at}` : <>Ort, Datum &amp; Unterschrift</>}
         </p>
       </div>
       <div>
